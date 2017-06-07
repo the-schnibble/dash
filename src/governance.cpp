@@ -146,7 +146,6 @@ void CGovernanceManager::ProcessMessage(CNode* pfrom, std::string& strCommand, C
 
     // A NEW GOVERNANCE OBJECT HAS ARRIVED
     else if (strCommand == NetMsgType::MNGOVERNANCEOBJECT)
-
     {
         // MAKE SURE WE HAVE A VALID REFERENCE TO THE TIP BEFORE CONTINUING
 
@@ -885,6 +884,8 @@ bool CGovernanceManager::MasternodeRateCheck(const CGovernanceObject& govobj, up
             default:
                 break;
             }
+
+            it->second.fStatusOK = true;
         }
         return true;
     }
@@ -947,14 +948,18 @@ bool CGovernanceManager::MasternodeRateCheck(const CGovernanceObject& govobj, up
 
     switch(eUpdateLast) {
     case UPDATE_TRUE:
+        // we should update the buffer only if object has accepted
+        if (!fRateOK)
+            LogPrintf("CGovernanceManager::MasternodeRateCheck -- WARNING !!! Rate too high but eUpdateLast = UPDATE_TRUE : object hash = %s, masternode vin = %s, object timestamp = %d, rate = %f, max rate = %f\n",
+                        strHash, vin.prevout.ToStringShort(), nTimestamp, dRate, dMaxRate);
         pBuffer->AddTimestamp(nTimestamp);
         it->second.fStatusOK = fRateOK;
-        break;
+        return true;
     case UPDATE_FAIL_ONLY:
-        if(!fRateOK) {
-            pBuffer->AddTimestamp(nTimestamp);
+        if(!fRateOK)
             it->second.fStatusOK = false;
-        }
+    case UPDATE_FALSE:
+        break;
     default:
         return true;
     }
