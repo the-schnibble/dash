@@ -435,13 +435,15 @@ void CGovernanceObject::UpdateLocalValidity()
 bool CGovernanceObject::IsValidLocally(std::string& strError, bool fCheckCollateral)
 {
     bool fMissingMasternode = false;
+    bool fMissingConfirmations = false;
 
-    return IsValidLocally(strError, fMissingMasternode, fCheckCollateral);
+    return IsValidLocally(strError, fMissingMasternode, fMissingConfirmations, fCheckCollateral);
 }
 
-bool CGovernanceObject::IsValidLocally(std::string& strError, bool& fMissingMasternode, bool fCheckCollateral)
+bool CGovernanceObject::IsValidLocally(std::string& strError, bool& fMissingMasternode, bool& fMissingConfirmations, bool fCheckCollateral)
 {
     fMissingMasternode = false;
+    fMissingConfirmations = false;
 
     if(fUnparsable) {
         strError = "Object data unparseable";
@@ -481,10 +483,14 @@ bool CGovernanceObject::IsValidLocally(std::string& strError, bool& fMissingMast
             return true;
         }
 
-        if(!IsCollateralValid(strError)) {
-            // strError set in IsCollateralValid
+        int nConfirmationsIn = GetCollateralConfirmations(strError);
+        if (nConfirmationsIn < GOVERNANCE_MIN_RELAY_FEE_CONFIRMATIONS) {
+            // strError set in GetCollateralConfirmations
             if(strError == "") strError = "Collateral is invalid";
             return false;
+        } else if (nConfirmationsIn < GOVERNANCE_FEE_CONFIRMATIONS) {
+           fMissingConfirmations = true;
+           return false;
         }
     }
 
@@ -515,7 +521,7 @@ CAmount CGovernanceObject::GetMinCollateralFee()
     }
 }
 
-bool CGovernanceObject::IsCollateralValid(std::string& strError)
+int CGovernanceObject::GetCollateralConfirmations(std::string& strError)
 {
     strError = "";
     CAmount nMinFee = GetMinCollateralFee();
@@ -528,14 +534,14 @@ bool CGovernanceObject::IsCollateralValid(std::string& strError)
 
     if(!GetTransaction(nCollateralHash, txCollateral, Params().GetConsensus(), nBlockHash, true)){
         strError = strprintf("Can't find collateral tx %s", txCollateral.ToString());
-        LogPrintf("CGovernanceObject::IsCollateralValid -- %s\n", strError);
-        return false;
+        LogPrintf("CGovernanceObject::GetCollateralConfirmations -- %s\n", strError);
+        return -1;
     }
 
     if(txCollateral.vout.size() < 1) {
         strError = strprintf("tx vout size less than 1 | %d", txCollateral.vout.size());
-        LogPrintf("CGovernanceObject::IsCollateralValid -- %s\n", strError);
-        return false;
+        LogPrintf("CGovernanceObject::GetCollateralConfirmations -- %s\n", strError);
+        return -1;
     }
 
     // LOOK FOR SPECIALIZED GOVERNANCE SCRIPT (PROOF OF BURN)
@@ -543,38 +549,38 @@ bool CGovernanceObject::IsCollateralValid(std::string& strError)
     CScript findScript;
     findScript << OP_RETURN << ToByteVector(nExpectedHash);
 
-    DBG( cout << "IsCollateralValid txCollateral.vout.size() = " << txCollateral.vout.size() << endl; );
+    DBG( cout << "GetCollateralConfirmations: txCollateral.vout.size() = " << txCollateral.vout.size() << endl; );
 
-    DBG( cout << "IsCollateralValid: findScript = " << ScriptToAsmStr( findScript, false ) << endl; );
+    DBG( cout << "GetCollateralConfirmations: findScript = " << ScriptToAsmStr( findScript, false ) << endl; );
 
-    DBG( cout << "IsCollateralValid: nMinFee = " << nMinFee << endl; );
+    DBG( cout << "GetCollateralConfirmations: nMinFee = " << nMinFee << endl; );
 
 
     bool foundOpReturn = false;
     BOOST_FOREACH(const CTxOut o, txCollateral.vout) {
-        DBG( cout << "IsCollateralValid txout : " << o.ToString()
+        DBG( cout << "GetCollateralConfirmations txout : " << o.ToString()
              << ", o.nValue = " << o.nValue
              << ", o.scriptPubKey = " << ScriptToAsmStr( o.scriptPubKey, false )
              << endl; );
         if(!o.scriptPubKey.IsNormalPaymentScript() && !o.scriptPubKey.IsUnspendable()){
             strError = strprintf("Invalid Script %s", txCollateral.ToString());
-            LogPrintf ("CGovernanceObject::IsCollateralValid -- %s\n", strError);
-            return false;
+            LogPrintf ("CGovernanceObject::GetCollateralConfirmations -- %s\n", strError);
+            return -1;
         }
         if(o.scriptPubKey == findScript && o.nValue >= nMinFee) {
-            DBG( cout << "IsCollateralValid foundOpReturn = true" << endl; );
+            DBG( cout << "GetCollateralConfirmations foundOpReturn = true" << endl; );
             foundOpReturn = true;
         }
         else  {
-            DBG( cout << "IsCollateralValid No match, continuing" << endl; );
+            DBG( cout << "GetCollateralConfirmations No match, continuing" << endl; );
         }
 
     }
 
     if(!foundOpReturn){
         strError = strprintf("Couldn't find opReturn %s in %s", nExpectedHash.ToString(), txCollateral.ToString());
-        LogPrintf ("CGovernanceObject::IsCollateralValid -- %s\n", strError);
-        return false;
+        LogPrintf ("CGovernanceObject::GetCollateralConfirmations -- %s\n", strError);
+        return -1;
     }
 
     // GET CONFIRMATIONS FOR TRANSACTION
@@ -595,11 +601,10 @@ bool CGovernanceObject::IsCollateralValid(std::string& strError)
         strError = "valid";
     } else {
         strError = strprintf("Collateral requires at least %d confirmations - %d confirmations", GOVERNANCE_FEE_CONFIRMATIONS, nConfirmationsIn);
-        LogPrintf ("CGovernanceObject::IsCollateralValid -- %s - %d confirmations\n", strError, nConfirmationsIn);
-        return false;
+        LogPrintf ("CGovernanceObject::GetCollateralConfirmations -- %s - %d confirmations\n", strError, nConfirmationsIn);
     }
 
-    return true;
+    return nConfirmationsIn;
 }
 
 int CGovernanceObject::CountMatchingVotes(vote_signal_enum_t eVoteSignalIn, vote_outcome_enum_t eVoteOutcomeIn) const

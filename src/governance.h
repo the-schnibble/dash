@@ -228,6 +228,9 @@ private:
 
     static const std::string SERIALIZATION_VERSION_STRING;
 
+    static const int MAX_TIME_FUTURE_DEVIATION;
+    static const int RELIABLE_PROPAGATION_TIME;
+
     // Keep track of current block index
     const CBlockIndex *pCurrentBlockIndex;
 
@@ -240,6 +243,9 @@ private:
     count_m_t mapSeenGovernanceObjects;
 
     object_time_m_t mapMasternodeOrphanObjects;
+
+    object_m_t mapPostponedObjects;
+    hash_s_t setAdditionRelayObjects;
 
     hash_time_m_t mapWatchdogObjects;
 
@@ -406,6 +412,8 @@ public:
     void CheckMasternodeOrphanVotes();
 
     void CheckMasternodeOrphanObjects();
+
+    void CheckPostponedObjects();
 
     bool AreRateChecksEnabled() const {
         LOCK(cs);
