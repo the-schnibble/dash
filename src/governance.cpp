@@ -266,7 +266,8 @@ void CGovernanceManager::CheckOrphanVotes(CGovernanceObject& govobj, CGovernance
     std::vector<vote_time_pair_t> vecVotePairs;
     mapOrphanVotes.GetAll(nHash, vecVotePairs);
 
-    fRateChecksEnabled = false;
+    SetRateChecks(false);
+
     int64_t nNow = GetAdjustedTime();
     for(size_t i = 0; i < vecVotePairs.size(); ++i) {
         bool fRemove = false;
@@ -284,7 +285,6 @@ void CGovernanceManager::CheckOrphanVotes(CGovernanceObject& govobj, CGovernance
             mapOrphanVotes.Erase(nHash, pairVote);
         }
     }
-    fRateChecksEnabled = true;
 }
 
 void CGovernanceManager::AddGovernanceObject(CGovernanceObject& govobj, CNode* pfrom)
@@ -480,7 +480,7 @@ void CGovernanceManager::UpdateCachesAndClean()
 
     if(!pCurrentBlockIndex) return;
 
-    fRateChecksEnabled = false;
+    SetRateChecks(false);
 
     LogPrint("gobject", "CGovernanceManager::UpdateCachesAndClean -- After pCurrentBlockIndex (not NULL)\n");
 
@@ -550,7 +550,6 @@ void CGovernanceManager::UpdateCachesAndClean()
         }
     }
 
-    fRateChecksEnabled = true;
     LogPrintf("CGovernanceManager::UpdateCachesAndClean -- %s\n", ToString());
 }
 
@@ -1003,18 +1002,19 @@ bool CGovernanceManager::ProcessVote(CNode* pfrom, const CGovernanceVote& vote, 
 void CGovernanceManager::CheckMasternodeOrphanVotes()
 {
     LOCK2(cs_main, cs);
-    fRateChecksEnabled = false;
+
+    SetRateChecks(false);
+
     for(object_m_it it = mapObjects.begin(); it != mapObjects.end(); ++it) {
         it->second.CheckOrphanVotes();
     }
-    fRateChecksEnabled = true;
 }
 
 void CGovernanceManager::CheckMasternodeOrphanObjects()
 {
     LOCK2(cs_main, cs);
     int64_t nNow = GetAdjustedTime();
-    fRateChecksEnabled = false;
+    SetRateChecks(false);
     object_time_m_it it = mapMasternodeOrphanObjects.begin();
     while(it != mapMasternodeOrphanObjects.end()) {
         object_time_pair_t& pair = it->second;
@@ -1041,7 +1041,6 @@ void CGovernanceManager::CheckMasternodeOrphanObjects()
         AddGovernanceObject(govobj);
         mapMasternodeOrphanObjects.erase(it++);
     }
-    fRateChecksEnabled = true;
 }
 
 void CGovernanceManager::RequestGovernanceObject(CNode* pfrom, const uint256& nHash, bool fUseFilter)

@@ -19,6 +19,8 @@
 #include "timedata.h"
 #include "util.h"
 
+#define SetRateChecks(value) SetRateChecksHelper helper(value, *this);
+
 class CGovernanceManager;
 class CGovernanceTriggerManager;
 class CGovernanceObject;
@@ -258,6 +260,26 @@ private:
     hash_s_t setRequestedVotes;
 
     bool fRateChecksEnabled;
+
+    class SetRateChecksHelper
+    {
+        CGovernanceManager& govman;
+        bool fRateChecksPrev;
+
+    public:
+        SetRateChecksHelper(bool value, CGovernanceManager& gm) : govman(gm)
+        {
+            ENTER_CRITICAL_SECTION(govman.cs)
+            fRateChecksPrev = govman.fRateChecksEnabled;
+            govman.fRateChecksEnabled = value;
+        }
+
+        ~SetRateChecksHelper()
+        {
+            govman.fRateChecksEnabled = fRateChecksPrev;
+            LEAVE_CRITICAL_SECTION(govman.cs)
+        }
+    };
 
 public:
     // critical section to protect the inner data structures
