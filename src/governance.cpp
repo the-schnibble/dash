@@ -197,6 +197,13 @@ void CGovernanceManager::ProcessMessage(CNode* pfrom, std::string& strCommand, C
         bool fMasternodeMissing = false;
         bool fIsValid = govobj.IsValidLocally(strError, fMasternodeMissing, true);
 
+        if(fRateCheckBypassed && (fIsValid || fMasternodeMissing)) {
+            if(!MasternodeRateCheck(govobj, UPDATE_FAIL_ONLY)) {
+                LogPrintf("MNGOVERNANCEOBJECT -- masternode rate check failed (after signature verification) - %s - (current block height %d) \n", strHash, nCachedBlockHeight);
+                return;
+            }
+        }
+
         if(fMasternodeMissing) {
             mapMasternodeOrphanObjects.insert(std::make_pair(nHash, object_time_pair_t(govobj, GetAdjustedTime() + GOVERNANCE_ORPHAN_EXPIRATION_TIME)));
             LogPrintf("MNGOVERNANCEOBJECT -- Missing masternode for: %s, strError = %s\n", strHash, strError);
@@ -208,38 +215,7 @@ void CGovernanceManager::ProcessMessage(CNode* pfrom, std::string& strCommand, C
             return;
         }
 
-        if(fRateCheckBypassed) {
-            if(!MasternodeRateCheck(govobj, UPDATE_FAIL_ONLY, true, fRateCheckBypassed)) {
-                LogPrintf("MNGOVERNANCEOBJECT -- masternode rate check failed (after signature verification) - %s - (current block height %d) \n", strHash, nCachedBlockHeight);
-                return;
-            }
-        }
-
-        // UPDATE CACHED VARIABLES FOR THIS OBJECT AND ADD IT TO OUR MANANGED DATA
-
-        govobj.UpdateSentinelVariables(); //this sets local vars in object
-
-        bool fAddToSeen = true;
-        if(AddGovernanceObject(govobj, fAddToSeen, pfrom))
-        {
-            LogPrintf("MNGOVERNANCEOBJECT -- %s new\n", strHash);
-            govobj.Relay();
-        }
-
-        if(fAddToSeen) {
-            // UPDATE THAT WE'VE SEEN THIS OBJECT
-            mapSeenGovernanceObjects.insert(std::make_pair(nHash, SEEN_OBJECT_IS_VALID));
-            // Update the rate buffer
-            MasternodeRateCheck(govobj, UPDATE_TRUE, true, fRateCheckBypassed);
-        }
-
-        masternodeSync.AddedGovernanceItem();
-
-
-        // WE MIGHT HAVE PENDING/ORPHAN VOTES FOR THIS OBJECT
-
-        CGovernanceException exception;
-        CheckOrphanVotes(govobj, exception);
+        AddGovernanceObject(govobj, pfrom);
     }
 
     // A NEW GOVERNANCE OBJECT VOTE HAS ARRIVED
@@ -309,6 +285,39 @@ void CGovernanceManager::CheckOrphanVotes(CGovernanceObject& govobj, CGovernance
         }
     }
     fRateChecksEnabled = true;
+}
+
+void CGovernanceManager::AddGovernanceObject(CGovernanceObject& govobj, CNode* pfrom)
+{
+    uint256 nHash = govobj.GetHash();
+    std::string strHash = nHash.ToString();
+
+    // UPDATE CACHED VARIABLES FOR THIS OBJECT AND ADD IT TO OUR MANANGED DATA
+
+    govobj.UpdateSentinelVariables(); //this sets local vars in object
+
+    bool fAddToSeen = true;
+    if(AddGovernanceObject(govobj, fAddToSeen, pfrom))
+    {
+        LogPrintf("AddGovernanceObject -- %s new, received form %s\n", strHash, pfrom->addrName);
+        govobj.Relay();
+    }
+
+    // PROCESS OBJECT EXACTLY THE SAME WAY AS USUAL
+
+    if(fAddToSeen) {
+        // UPDATE THAT WE'VE SEEN THIS OBJECT
+        mapSeenGovernanceObjects.insert(std::make_pair(nHash, SEEN_OBJECT_IS_VALID));
+        // Update the rate buffer
+        MasternodeRateCheck(govobj, UPDATE_TRUE);
+    }
+
+    masternodeSync.AddedGovernanceItem();
+
+    // WE MIGHT HAVE PENDING/ORPHAN VOTES FOR THIS OBJECT
+
+    CGovernanceException exception;
+    CheckOrphanVotes(govobj, exception);
 }
 
 bool CGovernanceManager::AddGovernanceObject(CGovernanceObject& govobj, bool& fAddToSeen, CNode* pfrom)
@@ -1029,15 +1038,8 @@ void CGovernanceManager::CheckMasternodeOrphanObjects()
             continue;
         }
 
-        bool fAddToSeen = true;
-        if(AddGovernanceObject(govobj, fAddToSeen)) {
-            LogPrintf("CGovernanceManager::CheckMasternodeOrphanObjects -- %s new\n", govobj.GetHash().ToString());
-            govobj.Relay();
-            mapMasternodeOrphanObjects.erase(it++);
-        }
-        else {
-            ++it;
-        }
+        AddGovernanceObject(govobj);
+        mapMasternodeOrphanObjects.erase(it++);
     }
     fRateChecksEnabled = true;
 }
