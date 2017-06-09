@@ -483,17 +483,8 @@ bool CGovernanceObject::IsValidLocally(std::string& strError, bool& fMissingMast
             return true;
         }
 
-        int nConfirmationsIn;
-        if (!IsCollateralValid(strError, nConfirmationsIn))
-        {
-            fMissingConfirmations = (nConfirmationsIn >= GOVERNANCE_MIN_RELAY_FEE_CONFIRMATIONS);
-            if (!fMissingConfirmations && strError == "") {
-                // strError set in IsCollateralValid
-                strError = "Collateral is invalid";
-            }
-
+        if (!IsCollateralValid(strError, fMissingConfirmations))
             return false;
-        }
     }
 
     /*
@@ -523,10 +514,10 @@ CAmount CGovernanceObject::GetMinCollateralFee()
     }
 }
 
-bool CGovernanceObject::IsCollateralValid(std::string& strError, int& nConfirmationsIn)
+bool CGovernanceObject::IsCollateralValid(std::string& strError, bool& fMissingConfirmations)
 {
     strError = "";
-    nConfirmationsIn = 0;
+    fMissingConfirmations = false;
     CAmount nMinFee = GetMinCollateralFee();
     uint256 nExpectedHash = GetHash();
 
@@ -589,7 +580,7 @@ bool CGovernanceObject::IsCollateralValid(std::string& strError, int& nConfirmat
     // GET CONFIRMATIONS FOR TRANSACTION
 
     LOCK(cs_main);
-    nConfirmationsIn = GetIXConfirmations(nCollateralHash);
+    int nConfirmationsIn = GetIXConfirmations(nCollateralHash);
     if (nBlockHash != uint256()) {
         BlockMap::iterator mi = mapBlockIndex.find(nBlockHash);
         if (mi != mapBlockIndex.end() && (*mi).second) {
@@ -603,6 +594,10 @@ bool CGovernanceObject::IsCollateralValid(std::string& strError, int& nConfirmat
     if(nConfirmationsIn < GOVERNANCE_FEE_CONFIRMATIONS) {
         strError = strprintf("Collateral requires at least %d confirmations - %d confirmations", GOVERNANCE_FEE_CONFIRMATIONS, nConfirmationsIn);
         LogPrintf ("CGovernanceObject::IsCollateralValid -- %s - %d confirmations\n", strError, nConfirmationsIn);
+        if (nConfirmationsIn >= GOVERNANCE_MIN_RELAY_FEE_CONFIRMATIONS) {
+            fMissingConfirmations = true;
+        }
+        return false;
     }
 
     strError = "valid";

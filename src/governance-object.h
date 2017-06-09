@@ -267,7 +267,7 @@ public:
     bool IsValidLocally(std::string& strError, bool& fMissingMasternode, bool& fMissingConfirmations, bool fCheckCollateral);
 
     /// Check the collateral transaction for the budget proposal/finalized budget
-    bool IsCollateralValid(std::string& strError, int& nConfirmationsIn);
+    bool IsCollateralValid(std::string& strError, bool &fMissingConfirmations);
 
     void UpdateLocalValidity();
 

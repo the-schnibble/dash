@@ -19,8 +19,6 @@
 #include "timedata.h"
 #include "util.h"
 
-#define SetRateChecks(value) SetRateChecksHelper helper(value, *this);
-
 class CGovernanceManager;
 class CGovernanceTriggerManager;
 class CGovernanceObject;
@@ -245,7 +243,7 @@ private:
     object_time_m_t mapMasternodeOrphanObjects;
 
     object_m_t mapPostponedObjects;
-    hash_s_t setAdditionRelayObjects;
+    hash_s_t setAdditionalRelayObjects;
 
     hash_time_m_t mapWatchdogObjects;
 
@@ -267,20 +265,20 @@ private:
 
     bool fRateChecksEnabled;
 
-    class SetRateChecksHelper
+    class CRateChecksGuard
     {
         CGovernanceManager& govman;
         bool fRateChecksPrev;
 
     public:
-        SetRateChecksHelper(bool value, CGovernanceManager& gm) : govman(gm)
+        CRateChecksGuard(bool value, CGovernanceManager& gm) : govman(gm)
         {
             ENTER_CRITICAL_SECTION(govman.cs)
             fRateChecksPrev = govman.fRateChecksEnabled;
             govman.fRateChecksEnabled = value;
         }
 
-        ~SetRateChecksHelper()
+        ~CRateChecksGuard()
         {
             govman.fRateChecksEnabled = fRateChecksPrev;
             LEAVE_CRITICAL_SECTION(govman.cs)
