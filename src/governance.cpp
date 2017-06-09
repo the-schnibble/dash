@@ -1072,15 +1072,15 @@ void CGovernanceManager::CheckPostponedObjects()
                govobj.GetObjectType() != GOVERNANCE_OBJECT_TRIGGER);
 
         std::string strError;
-        int nConfirmationsIn = govobj.GetCollateralConfirmations(strError);
-
-        if (nConfirmationsIn >= GOVERNANCE_FEE_CONFIRMATIONS) {
+        int nConfirmationsIn;
+        if (govobj.IsCollateralValid(strError, nConfirmationsIn))
+        {
             if(govobj.IsValidLocally(strError, false))
                 AddGovernanceObject(govobj);
             else
                 LogPrintf("CGovernanceManager::CheckPostponedObjects -- %s invalid\n", nHash.ToString());
-        }
-        else if(nConfirmationsIn >= GOVERNANCE_MIN_RELAY_FEE_CONFIRMATIONS) {
+
+        } else if(nConfirmationsIn >= GOVERNANCE_MIN_RELAY_FEE_CONFIRMATIONS) {
             // wait for more confirmations
             ++it;
             continue;
