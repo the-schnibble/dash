@@ -391,6 +391,12 @@ public:
 
     bool SerializeVoteForHash(uint256 nHash, CDataStream& ss);
 
+    void AddPostponedObject(const CGovernanceObject& govobj)
+    {
+        LOCK(cs);
+        mapPostponedObjects.insert(std::make_pair(govobj.GetHash(), govobj));
+    }
+
     void AddSeenGovernanceObject(uint256 nHash, int status);
 
     void AddSeenVote(uint256 nHash, int status);
