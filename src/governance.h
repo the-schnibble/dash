@@ -238,6 +238,9 @@ private:
     // keep track of the scanning errors
     object_m_t mapObjects;
 
+    // mapSeenGovernanceObjects contains key-value pairs, where
+    //   key   - governance object's hash
+    //   value - either object's status or expiration time for deleted objects
     count_m_t mapSeenGovernanceObjects;
 
     object_time_m_t mapMasternodeOrphanObjects;
@@ -293,12 +296,12 @@ public:
 
     virtual ~CGovernanceManager() {}
 
-    int CountProposalInventoryItems()
+    // TODO What is this for ?
+    /*int CountProposalInventoryItems()
     {
-        // TODO What is this for ?
         return mapSeenGovernanceObjects.size();
         //return mapSeenGovernanceObjects.size() + mapSeenVotes.size();
-    }
+    }*/
 
     /**
      * This is called by AlreadyHave in main.cpp as part of the inventory
@@ -321,7 +324,6 @@ public:
 
     bool IsBudgetPaymentBlock(int nBlockHeight);
     void AddGovernanceObject(CGovernanceObject& govobj, CNode* pfrom = NULL);
-    bool AddGovernanceObject(CGovernanceObject& govobj, bool& fAddToSeen, CNode* pfrom = NULL);
 
     std::string GetRequiredPaymentsString(int nBlockHeight);
 
@@ -360,6 +362,7 @@ public:
             strVersion = SERIALIZATION_VERSION_STRING;
             READWRITE(strVersion);
         }
+
         READWRITE(mapSeenGovernanceObjects);
         READWRITE(mapInvalidVotes);
         READWRITE(mapOrphanVotes);
