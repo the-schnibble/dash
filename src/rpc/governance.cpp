@@ -273,14 +273,14 @@ UniValue gobject(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Object creation rate limit exceeded");
         }
 
-        if(fMissingConfirmations)
-            governance.AddPostponedObject(govobj);
-
-        governance.AddSeenGovernanceObject(govobj.GetHash(), SEEN_OBJECT_IS_VALID);
-        govobj.Relay();
         LogPrintf("gobject(submit) -- Adding locally created governance object - %s\n", strHash);
-        bool fAddToSeen = true;
-        governance.AddGovernanceObject(govobj, fAddToSeen);
+
+        if(fMissingConfirmations) {
+            governance.AddPostponedObject(govobj);
+            govobj.Relay();
+        } else {
+            governance.AddGovernanceObject(govobj);
+        }
 
         return govobj.GetHash().ToString();
     }

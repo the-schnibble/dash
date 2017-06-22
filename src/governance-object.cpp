@@ -592,11 +592,15 @@ bool CGovernanceObject::IsCollateralValid(std::string& strError, bool& fMissingC
     }
 
     if(nConfirmationsIn < GOVERNANCE_FEE_CONFIRMATIONS) {
-        strError = strprintf("Collateral requires at least %d confirmations - %d confirmations", GOVERNANCE_FEE_CONFIRMATIONS, nConfirmationsIn);
-        LogPrintf ("CGovernanceObject::IsCollateralValid -- %s - %d confirmations\n", strError, nConfirmationsIn);
+        strError = strprintf("Collateral requires at least %d confirmations to be relayed throughout the network (it has only %d)", GOVERNANCE_FEE_CONFIRMATIONS, nConfirmationsIn);
         if (nConfirmationsIn >= GOVERNANCE_MIN_RELAY_FEE_CONFIRMATIONS) {
             fMissingConfirmations = true;
+            strError += ", pre-accepted -- waiting for required confirmations";
+        } else {
+            strError += ", rejected -- try again later";
         }
+        LogPrintf ("CGovernanceObject::IsCollateralValid -- %s\n", strError);
+
         return false;
     }
 

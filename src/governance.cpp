@@ -44,7 +44,7 @@ CGovernanceManager::CGovernanceManager()
 // Accessors for thread-safe access to maps
 bool CGovernanceManager::HaveObjectForHash(uint256 nHash) {
     LOCK(cs);
-    return (mapObjects.count(nHash) == 1);
+    return (mapObjects.count(nHash) == 1 || mapPostponedObjects.count(nHash) == 1);
 }
 
 bool CGovernanceManager::SerializeObjectForHash(uint256 nHash, CDataStream& ss)
@@ -52,7 +52,9 @@ bool CGovernanceManager::SerializeObjectForHash(uint256 nHash, CDataStream& ss)
     LOCK(cs);
     object_m_it it = mapObjects.find(nHash);
     if (it == mapObjects.end()) {
-        return false;
+        it = mapPostponedObjects.find(nHash);
+        if (it == mapPostponedObjects.end())
+            return false;
     }
     ss << it->second;
     return true;
@@ -212,7 +214,7 @@ void CGovernanceManager::ProcessMessage(CNode* pfrom, std::string& strCommand, C
                 mapMasternodeOrphanObjects.insert(std::make_pair(nHash, object_time_pair_t(govobj, GetAdjustedTime() + GOVERNANCE_ORPHAN_EXPIRATION_TIME)));
                 LogPrintf("MNGOVERNANCEOBJECT -- Missing masternode for: %s, strError = %s\n", strHash, strError);
             } else if(fMissingConfirmations) {
-                governance.AddPostponedObject(govobj);
+                AddPostponedObject(govobj);
                 LogPrintf("MNGOVERNANCEOBJECT -- Not enough fee confirmations for: %s, strError = %s\n", strHash, strError);
             } else {
                 LogPrintf("MNGOVERNANCEOBJECT -- Governance object is invalid - %s\n", strError);
@@ -306,7 +308,7 @@ void CGovernanceManager::AddGovernanceObject(CGovernanceObject& govobj, CNode* p
     bool fAddToSeen = true;
     if(AddGovernanceObject(govobj, fAddToSeen, pfrom))
     {
-        LogPrintf("AddGovernanceObject -- %s new, received form %s\n", strHash, pfrom->addrName);
+        LogPrintf("AddGovernanceObject -- %s new, received form %s\n", strHash, pfrom? pfrom->addrName : "NULL");
         govobj.Relay();
     }
 
@@ -704,8 +706,7 @@ bool CGovernanceManager::ConfirmInventoryRequest(const CInv& inv)
     switch(inv.type) {
     case MSG_GOVERNANCE_OBJECT:
     {
-        object_m_it it = mapObjects.find(inv.hash);
-        if(it != mapObjects.end()) {
+        if(mapObjects.count(inv.hash) == 1 || mapPostponedObjects.count(inv.hash) == 1) {
             LogPrint("gobject", "CGovernanceManager::ConfirmInventoryRequest already have governance object, returning false\n");
             return false;
         }
