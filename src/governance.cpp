@@ -275,7 +275,7 @@ void CGovernanceManager::CheckOrphanVotes(CGovernanceObject& govobj, CGovernance
     std::vector<vote_time_pair_t> vecVotePairs;
     mapOrphanVotes.GetAll(nHash, vecVotePairs);
 
-    CRateChecksGuard guard(false, *this);
+    ScopedLockBool guard(cs, fRateChecksEnabled, false);
 
     int64_t nNow = GetAdjustedTime();
     for(size_t i = 0; i < vecVotePairs.size(); ++i) {
@@ -489,7 +489,7 @@ void CGovernanceManager::UpdateCachesAndClean()
 
     if(!pCurrentBlockIndex) return;
 
-    CRateChecksGuard guard(false, *this);
+    ScopedLockBool guard(cs, fRateChecksEnabled, false);
 
     LogPrint("gobject", "CGovernanceManager::UpdateCachesAndClean -- After pCurrentBlockIndex (not NULL)\n");
 
@@ -1016,9 +1016,8 @@ bool CGovernanceManager::ProcessVote(CNode* pfrom, const CGovernanceVote& vote, 
 
 void CGovernanceManager::CheckMasternodeOrphanVotes()
 {
-    LOCK2(cs_main, cs);
-
-    CRateChecksGuard guard(false, *this);
+    LOCK(cs_main);
+    ScopedLockBool guard(cs, fRateChecksEnabled, false);
 
     for(object_m_it it = mapObjects.begin(); it != mapObjects.end(); ++it) {
         it->second.CheckOrphanVotes();
@@ -1027,9 +1026,9 @@ void CGovernanceManager::CheckMasternodeOrphanVotes()
 
 void CGovernanceManager::CheckMasternodeOrphanObjects()
 {
-    LOCK2(cs_main, cs);
+    LOCK(cs_main);
+    ScopedLockBool guard(cs, fRateChecksEnabled, false);
     int64_t nNow = GetAdjustedTime();
-    CRateChecksGuard guard(false, *this);
     object_time_m_it it = mapMasternodeOrphanObjects.begin();
     while(it != mapMasternodeOrphanObjects.end()) {
         object_time_pair_t& pair = it->second;

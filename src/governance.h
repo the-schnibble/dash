@@ -265,23 +265,24 @@ private:
 
     bool fRateChecksEnabled;
 
-    class CRateChecksGuard
+    class ScopedLockBool
     {
-        CGovernanceManager& govman;
-        bool fRateChecksPrev;
+        CCriticalSection& cs;
+        bool& ref;
+        bool fPrevValue;
 
     public:
-        CRateChecksGuard(bool value, CGovernanceManager& gm) : govman(gm)
+        ScopedLockBool(CCriticalSection& _cs, bool& _ref, bool _value) : cs(_cs), ref(_ref)
         {
-            ENTER_CRITICAL_SECTION(govman.cs)
-            fRateChecksPrev = govman.fRateChecksEnabled;
-            govman.fRateChecksEnabled = value;
+            ENTER_CRITICAL_SECTION(cs)
+            fPrevValue = ref;
+            ref = _value;
         }
 
-        ~CRateChecksGuard()
+        ~ScopedLockBool()
         {
-            govman.fRateChecksEnabled = fRateChecksPrev;
-            LEAVE_CRITICAL_SECTION(govman.cs)
+            ref = fPrevValue;
+            LEAVE_CRITICAL_SECTION(cs)
         }
     };
 
