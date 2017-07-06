@@ -197,6 +197,8 @@ public: // Types
 
     typedef txout_m_t::const_iterator txout_m_cit;
 
+    typedef std::map<COutPoint, int> txout_int_m_t;
+
     typedef std::set<uint256> hash_s_t;
 
     typedef hash_s_t::iterator hash_s_it;
@@ -238,6 +240,7 @@ private:
     hash_time_m_t mapErasedGovernanceObjects;
 
     object_time_m_t mapMasternodeOrphanObjects;
+    txout_int_m_t mapMasternodeOrphanCounter;
 
     object_m_t mapPostponedObjects;
     hash_s_t setAdditionalRelayObjects;
