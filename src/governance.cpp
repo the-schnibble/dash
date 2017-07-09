@@ -212,35 +212,26 @@ void CGovernanceManager::ProcessMessage(CNode* pfrom, std::string& strCommand, C
         if(!fIsValid) {
             if(fMasternodeMissing) {
 
-                CTxIn vin = govobj.GetMasternodeVin();
-
-                CCoins coins;
-                if(!pcoinsTip->GetCoins(vin.prevout.hash, coins) ||
-                   (unsigned int)vin.prevout.n>=coins.vout.size() ||
-                   coins.vout[vin.prevout.n].IsNull()) {
-                    LogPrint("gobject", "MNGOVERNANCEOBJECT -- Failed to find Masternode UTXO, missing masternode=%s\n", vin.prevout.ToStringShort());
-                    return;
-                }
-                if(coins.vout[vin.prevout.n].nValue != 1000 * COIN) {
-                    LogPrint("gobject", "MNGOVERNANCEOBJECT -- Masternode UTXO should have 1000 DASH, missing masternode=%s\n", vin.prevout.ToStringShort());
-                    return;
-                }
-
-                int& count = mapMasternodeOrphanCounter[vin.prevout];
+                int& count = mapMasternodeOrphanCounter[govobj.GetMasternodeVin().prevout];
                 if (count >= 10) {
-                    LogPrint("gobject", "MNGOVERNANCEOBJECT -- Too many orphan objects, missing masternode=%s\n", vin.prevout.ToStringShort());
-                    // TODO: apply node's ban score
+                    LogPrint("gobject", "MNGOVERNANCEOBJECT -- Too many orphan objects, missing masternode=%s\n", govobj.GetMasternodeVin().prevout.ToStringShort());
+                    // ask for this object again in 2 minutes
+                    CInv inv(MSG_GOVERNANCE_OBJECT, govobj.GetHash());
+                    pfrom->AskFor(inv);
                     return;
                 }
 
                 count++;
-                mapMasternodeOrphanObjects.insert(std::make_pair(nHash, object_time_pair_t(govobj, GetAdjustedTime() + GOVERNANCE_ORPHAN_EXPIRATION_TIME)));
+                ExpirationInfo info(pfrom->GetId(), GetAdjustedTime() + GOVERNANCE_ORPHAN_EXPIRATION_TIME);
+                mapMasternodeOrphanObjects.insert(std::make_pair(nHash, object_info_pair_t(govobj, info)));
                 LogPrintf("MNGOVERNANCEOBJECT -- Missing masternode for: %s, strError = %s\n", strHash, strError);
             } else if(fMissingConfirmations) {
                 AddPostponedObject(govobj);
                 LogPrintf("MNGOVERNANCEOBJECT -- Not enough fee confirmations for: %s, strError = %s\n", strHash, strError);
             } else {
                 LogPrintf("MNGOVERNANCEOBJECT -- Governance object is invalid - %s\n", strError);
+                // apply node's ban score
+                Misbehaving(pfrom->GetId(), 20);
             }
 
             mapSeenGovernanceObjects.insert(std::make_pair(nHash, SEEN_OBJECT_ERROR_INVALID));
@@ -1053,12 +1044,12 @@ void CGovernanceManager::CheckMasternodeOrphanObjects()
     LOCK2(cs_main, cs);
     int64_t nNow = GetAdjustedTime();
     CRateChecksGuard guard(false, *this);
-    object_time_m_it it = mapMasternodeOrphanObjects.begin();
+    object_info_m_it it = mapMasternodeOrphanObjects.begin();
     while(it != mapMasternodeOrphanObjects.end()) {
-        object_time_pair_t& pair = it->second;
+        object_info_pair_t& pair = it->second;
         CGovernanceObject& govobj = pair.first;
 
-        if(pair.second >= nNow) {
+        if(pair.second.nExpirationTime >= nNow) {
             string strError;
             bool fMasternodeMissing = false;
             bool fConfirmationsMissing = false;
@@ -1070,6 +1061,9 @@ void CGovernanceManager::CheckMasternodeOrphanObjects()
                 ++it;
                 continue;
             }
+        } else {
+            // apply node's ban score
+            Misbehaving(pair.second.idFrom, 20);
         }
 
         auto it_count = mapMasternodeOrphanCounter.find(govobj.GetMasternodeVin().prevout);
