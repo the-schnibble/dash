@@ -427,6 +427,7 @@ std::string CGovernanceObject::GetDataAsString()
 
 void CGovernanceObject::UpdateLocalValidity()
 {
+    LOCK(cs_main);
     // THIS DOES NOT CHECK COLLATERAL, THIS IS CHECKED UPON ORIGINAL ARRIVAL
     fCachedLocalValidity = IsValidLocally(strLocalValidityError, false);
 };
@@ -595,7 +596,7 @@ bool CGovernanceObject::IsCollateralValid(std::string& strError, bool& fMissingC
 
     // GET CONFIRMATIONS FOR TRANSACTION
 
-    LOCK(cs_main);
+    AssertLockHeld(cs_main);
     int nConfirmationsIn = GetIXConfirmations(nCollateralHash);
     if (nBlockHash != uint256()) {
         BlockMap::iterator mi = mapBlockIndex.find(nBlockHash);
