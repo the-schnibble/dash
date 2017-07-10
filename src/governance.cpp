@@ -27,7 +27,7 @@ CGovernanceManager::CGovernanceManager()
       nTimeLastDiff(0),
       nCachedBlockHeight(0),
       mapObjects(),
-      mapSeenGovernanceObjects(),
+      mapErasedGovernanceObjects(),
       mapMasternodeOrphanObjects(),
       mapWatchdogObjects(),
       nHashWatchdogCurrent(),
@@ -178,7 +178,7 @@ void CGovernanceManager::ProcessMessage(CNode* pfrom, std::string& strCommand, C
         LOCK2(cs_main, cs);
 
         if(mapObjects.count(nHash) || mapPostponedObjects.count(nHash) ||
-           mapSeenGovernanceObjects.count(nHash) || mapMasternodeOrphanObjects.count(nHash)) {
+           mapErasedGovernanceObjects.count(nHash) || mapMasternodeOrphanObjects.count(nHash)) {
             // TODO - print error code? what if it's GOVOBJ_ERROR_IMMATURE?
             LogPrint("gobject", "MNGOVERNANCEOBJECT -- Received already seen object: %s\n", strHash);
             return;
@@ -541,7 +541,7 @@ void CGovernanceManager::UpdateCachesAndClean()
                 nStatus = std::numeric_limits<int>::max();
             }
 
-            mapSeenGovernanceObjects.insert(std::make_pair(nHash, nStatus));
+            mapErasedGovernanceObjects.insert(std::make_pair(nHash, nStatus));
             mapObjects.erase(it++);
         } else {
             ++it;
@@ -549,11 +549,11 @@ void CGovernanceManager::UpdateCachesAndClean()
     }
 
     // forget about expired deleted objects
-    count_m_it s_it = mapSeenGovernanceObjects.begin();
-    while(s_it != mapSeenGovernanceObjects.end()) {
+    count_m_it s_it = mapErasedGovernanceObjects.begin();
+    while(s_it != mapErasedGovernanceObjects.end()) {
         // regardless of implied value it can be interpreted as UNIX timestamp at which this entry can be removed
         if(s_it->second < (int)GetTime())
-            mapSeenGovernanceObjects.erase(s_it++);
+            mapErasedGovernanceObjects.erase(s_it++);
         else
             ++s_it;
     }
@@ -1386,7 +1386,7 @@ std::string CGovernanceManager::ToString() const
 
     return strprintf("Governance Objects: %d (Proposals: %d, Triggers: %d, Watchdogs: %d/%d, Other: %d; Deleted: %d), Votes: %d",
                     (int)mapObjects.size(),
-                    nProposalCount, nTriggerCount, nWatchdogCount, mapWatchdogObjects.size(), nOtherCount, (int)mapSeenGovernanceObjects.size(),
+                    nProposalCount, nTriggerCount, nWatchdogCount, mapWatchdogObjects.size(), nOtherCount, (int)mapErasedGovernanceObjects.size(),
                     (int)mapVoteToObject.GetSize());
 }
 

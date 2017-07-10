@@ -238,10 +238,10 @@ private:
     // keep track of the scanning errors
     object_m_t mapObjects;
 
-    // mapSeenGovernanceObjects contains key-value pairs, where
+    // mapDeletedGovernanceObjects contains key-value pairs, where
     //   key   - governance object's hash
     //   value - either object's status or expiration time for deleted objects
-    count_m_t mapSeenGovernanceObjects;
+    count_m_t mapDeletedGovernanceObjects;
 
     object_time_m_t mapMasternodeOrphanObjects;
 
@@ -337,7 +337,7 @@ public:
 
         LogPrint("gobject", "Governance object manager was cleared\n");
         mapObjects.clear();
-        mapSeenGovernanceObjects.clear();
+        mapDeletedGovernanceObjects.clear();
         mapWatchdogObjects.clear();
         nHashWatchdogCurrent = uint256();
         nTimeWatchdogCurrent = 0;
@@ -363,7 +363,7 @@ public:
             READWRITE(strVersion);
         }
 
-        READWRITE(mapSeenGovernanceObjects);
+        READWRITE(mapDeletedGovernanceObjects);
         READWRITE(mapInvalidVotes);
         READWRITE(mapOrphanVotes);
         READWRITE(mapObjects);
