@@ -173,6 +173,37 @@ public:
         MASTERNODE_POSE_BAN
     };
 
+    enum CollateralStatus {
+        COLLATERAL_OK,
+        COLLATERAL_UTXO_NOT_FOUND,
+        COLLATERAL_INVALID
+    };
+
+    static CollateralStatus CheckCollateral(CTxIn vin)
+    {
+        int nHeight;
+        return CheckCollateral(vin, nHeight);
+    }
+
+    static CollateralStatus CheckCollateral(CTxIn vin, int& nHeight)
+    {
+        AssertLockHeld(cs_main);
+
+        CCoins coins;
+        if(!pcoinsTip->GetCoins(vin.prevout.hash, coins) ||
+           (unsigned int)vin.prevout.n>=coins.vout.size() ||
+           coins.vout[vin.prevout.n].IsNull()) {
+            return COLLATERAL_UTXO_NOT_FOUND;
+        }
+
+        if(coins.vout[vin.prevout.n].nValue != 1000 * COIN) {
+            return COLLATERAL_INVALID;
+        }
+
+        nHeight = coins.nHeight;
+        return COLLATERAL_OK;
+    }
+
     CTxIn vin;
     CService addr;
     CPubKey pubKeyCollateralAddress;

@@ -471,23 +471,16 @@ bool CGovernanceObject::IsValidLocally(std::string& strError, bool& fMissingMast
             masternode_info_t infoMn = mnodeman.GetMasternodeInfo(vinMasternode);
             if(!infoMn.fInfoValid) {
 
-                AssertLockHeld(cs_main);
-
-                CTxIn vin = GetMasternodeVin();
-
-                CCoins coins;
-                if(!pcoinsTip->GetCoins(vin.prevout.hash, coins) ||
-                   (unsigned int)vin.prevout.n>=coins.vout.size() ||
-                   coins.vout[vin.prevout.n].IsNull()) {
-                    strError = "Failed to find Masternode UTXO, missing masternode=" + vin.prevout.ToStringShort() + "\n";
-                    return false;
-                } else if(coins.vout[vin.prevout.n].nValue != 1000 * COIN) {
-                    strError = "Masternode UTXO should have 1000 DASH, missing masternode=" + vin.prevout.ToStringShort() + "\n";
-                    return false;
+                CMasternode::CollateralStatus err = CMasternode::CheckCollateral(GetMasternodeVin());
+                if (err == CMasternode::COLLATERAL_OK) {
+                    fMissingMasternode = true;
+                    strError = "Masternode not found: " + strOutpoint;
+                } else if (err == CMasternode::COLLATERAL_UTXO_NOT_FOUND) {
+                    strError = "Failed to find Masternode UTXO, missing masternode=" + GetMasternodeVin().prevout.ToStringShort() + "\n";
+                } else if (err == CMasternode::COLLATERAL_INVALID) {
+                    strError = "Masternode UTXO should have 1000 DASH, missing masternode=" + GetMasternodeVin().prevout.ToStringShort() + "\n";
                 }
 
-                fMissingMasternode = true;
-                strError = "Masternode not found: " + strOutpoint;
                 return false;
             }
 
