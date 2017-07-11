@@ -176,33 +176,8 @@ public:
     enum CollateralStatus {
         COLLATERAL_OK,
         COLLATERAL_UTXO_NOT_FOUND,
-        COLLATERAL_INVALID
+        COLLATERAL_INVALID_AMOUNT
     };
-
-    static CollateralStatus CheckCollateral(CTxIn vin)
-    {
-        int nHeight;
-        return CheckCollateral(vin, nHeight);
-    }
-
-    static CollateralStatus CheckCollateral(CTxIn vin, int& nHeight)
-    {
-        AssertLockHeld(cs_main);
-
-        CCoins coins;
-        if(!pcoinsTip->GetCoins(vin.prevout.hash, coins) ||
-           (unsigned int)vin.prevout.n>=coins.vout.size() ||
-           coins.vout[vin.prevout.n].IsNull()) {
-            return COLLATERAL_UTXO_NOT_FOUND;
-        }
-
-        if(coins.vout[vin.prevout.n].nValue != 1000 * COIN) {
-            return COLLATERAL_INVALID;
-        }
-
-        nHeight = coins.nHeight;
-        return COLLATERAL_OK;
-    }
 
     CTxIn vin;
     CService addr;
@@ -293,6 +268,8 @@ public:
 
     bool UpdateFromNewBroadcast(CMasternodeBroadcast& mnb);
 
+    static CollateralStatus CheckCollateral(CTxIn vin);
+    static CollateralStatus CheckCollateral(CTxIn vin, int& nHeight);
     void Check(bool fForce = false);
 
     bool IsBroadcastedWithin(int nSeconds) { return GetAdjustedTime() - sigTime < nSeconds; }

@@ -161,6 +161,31 @@ arith_uint256 CMasternode::CalculateScore(const uint256& blockHash)
     return (hash3 > hash2 ? hash3 - hash2 : hash2 - hash3);
 }
 
+CMasternode::CollateralStatus CMasternode::CheckCollateral(CTxIn vin)
+{
+    int nHeight;
+    return CheckCollateral(vin, nHeight);
+}
+
+CMasternode::CollateralStatus CMasternode::CheckCollateral(CTxIn vin, int& nHeight)
+{
+    AssertLockHeld(cs_main);
+
+    CCoins coins;
+    if(!pcoinsTip->GetCoins(vin.prevout.hash, coins) ||
+       (unsigned int)vin.prevout.n>=coins.vout.size() ||
+       coins.vout[vin.prevout.n].IsNull()) {
+        return COLLATERAL_UTXO_NOT_FOUND;
+    }
+
+    if(coins.vout[vin.prevout.n].nValue != 1000 * COIN) {
+        return COLLATERAL_INVALID_AMOUNT;
+    }
+
+    nHeight = coins.nHeight;
+    return COLLATERAL_OK;
+}
+
 void CMasternode::Check(bool fForce)
 {
     LOCK(cs);
@@ -637,7 +662,7 @@ bool CMasternodeBroadcast::CheckOutpoint(int& nDos)
             return false;
         }
 
-        if (err == COLLATERAL_INVALID) {
+        if (err == COLLATERAL_INVALID_AMOUNT) {
             LogPrint("masternode", "CMasternodeBroadcast::CheckOutpoint -- Masternode UTXO should have 1000 DASH, masternode=%s\n", vin.prevout.ToStringShort());
             return false;
         }
