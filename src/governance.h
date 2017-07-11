@@ -179,11 +179,11 @@ public: // Types
 
     typedef CacheMap<uint256, CGovernanceObject*> object_ref_cache_t;
 
-    typedef std::map<uint256, int> count_m_t;
+    typedef std::map<uint256, int> hash_time32_m_t;
 
-    typedef count_m_t::iterator count_m_it;
+    typedef hash_time32_m_t::iterator hash_time32_m_it;
 
-    typedef count_m_t::const_iterator count_m_cit;
+    typedef hash_time32_m_t::const_iterator hash_time32_m_cit;
 
     typedef std::map<uint256, CGovernanceVote> vote_m_t;
 
@@ -238,10 +238,10 @@ private:
     // keep track of the scanning errors
     object_m_t mapObjects;
 
-    // mapDeletedGovernanceObjects contains key-value pairs, where
+    // mapErasedGovernanceObjects contains key-value pairs, where
     //   key   - governance object's hash
-    //   value - either object's status or expiration time for deleted objects
-    count_m_t mapDeletedGovernanceObjects;
+    //   value - expiration time for deleted objects
+    hash_time32_m_t mapErasedGovernanceObjects;
 
     object_time_m_t mapMasternodeOrphanObjects;
 
@@ -296,13 +296,6 @@ public:
 
     virtual ~CGovernanceManager() {}
 
-    // TODO What is this for ?
-    /*int CountProposalInventoryItems()
-    {
-        return mapSeenGovernanceObjects.size();
-        //return mapSeenGovernanceObjects.size() + mapSeenVotes.size();
-    }*/
-
     /**
      * This is called by AlreadyHave in main.cpp as part of the inventory
      * retrieval process.  Returns true if we want to retrieve the object, otherwise
@@ -337,7 +330,7 @@ public:
 
         LogPrint("gobject", "Governance object manager was cleared\n");
         mapObjects.clear();
-        mapDeletedGovernanceObjects.clear();
+        mapErasedGovernanceObjects.clear();
         mapWatchdogObjects.clear();
         nHashWatchdogCurrent = uint256();
         nTimeWatchdogCurrent = 0;
@@ -363,7 +356,7 @@ public:
             READWRITE(strVersion);
         }
 
-        READWRITE(mapDeletedGovernanceObjects);
+        READWRITE(mapErasedGovernanceObjects);
         READWRITE(mapInvalidVotes);
         READWRITE(mapOrphanVotes);
         READWRITE(mapObjects);

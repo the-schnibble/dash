@@ -526,22 +526,17 @@ void CGovernanceManager::UpdateCachesAndClean()
                 }
             }
 
-            int nStatus;
-
             int64_t nSuperblockCycleSeconds = Params().GetConsensus().nSuperblockCycle * Params().GetConsensus().nPowTargetSpacing;
-            int64_t nTimeExpired = pObj->GetCreationTime() + 2 * nSuperblockCycleSeconds + GOVERNANCE_DELETION_DELAY;
+            int nTimeExpired = (int)(pObj->GetCreationTime() + 2 * nSuperblockCycleSeconds + GOVERNANCE_DELETION_DELAY);
 
             if(pObj->GetObjectType() == GOVERNANCE_OBJECT_WATCHDOG) {
                 mapWatchdogObjects.erase(nHash);
-                nStatus = (int)nTimeExpired;
-            } else if(pObj->GetObjectType() == GOVERNANCE_OBJECT_TRIGGER) {
-                nStatus = (int)nTimeExpired;
-            } else {
+            } else if(pObj->GetObjectType() != GOVERNANCE_OBJECT_TRIGGER) {
                 // keep hashes of deleted proposals forever
-                nStatus = std::numeric_limits<int>::max();
+                nTimeExpired = std::numeric_limits<int>::max();
             }
 
-            mapErasedGovernanceObjects.insert(std::make_pair(nHash, nStatus));
+            mapErasedGovernanceObjects.insert(std::make_pair(nHash, nTimeExpired));
             mapObjects.erase(it++);
         } else {
             ++it;
@@ -549,9 +544,8 @@ void CGovernanceManager::UpdateCachesAndClean()
     }
 
     // forget about expired deleted objects
-    count_m_it s_it = mapErasedGovernanceObjects.begin();
+    hash_time32_m_it s_it = mapErasedGovernanceObjects.begin();
     while(s_it != mapErasedGovernanceObjects.end()) {
-        // regardless of implied value it can be interpreted as UNIX timestamp at which this entry can be removed
         if(s_it->second < (int)GetTime())
             mapErasedGovernanceObjects.erase(s_it++);
         else
