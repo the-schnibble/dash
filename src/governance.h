@@ -179,12 +179,6 @@ public: // Types
 
     typedef CacheMap<uint256, CGovernanceObject*> object_ref_cache_t;
 
-    typedef std::map<uint256, int> hash_time32_m_t;
-
-    typedef hash_time32_m_t::iterator hash_time32_m_it;
-
-    typedef hash_time32_m_t::const_iterator hash_time32_m_cit;
-
     typedef std::map<uint256, CGovernanceVote> vote_m_t;
 
     typedef vote_m_t::iterator vote_m_it;
@@ -241,7 +235,7 @@ private:
     // mapErasedGovernanceObjects contains key-value pairs, where
     //   key   - governance object's hash
     //   value - expiration time for deleted objects
-    hash_time32_m_t mapErasedGovernanceObjects;
+    hash_time_m_t mapErasedGovernanceObjects;
 
     object_time_m_t mapMasternodeOrphanObjects;
 

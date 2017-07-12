@@ -18,7 +18,7 @@ CGovernanceManager governance;
 
 int nSubmittedFinalBudget;
 
-const std::string CGovernanceManager::SERIALIZATION_VERSION_STRING = "CGovernanceManager-Version-11";
+const std::string CGovernanceManager::SERIALIZATION_VERSION_STRING = "CGovernanceManager-Version-12";
 const int CGovernanceManager::MAX_TIME_FUTURE_DEVIATION = 60*60;
 const int CGovernanceManager::RELIABLE_PROPAGATION_TIME = 60;
 
@@ -527,13 +527,13 @@ void CGovernanceManager::UpdateCachesAndClean()
             }
 
             int64_t nSuperblockCycleSeconds = Params().GetConsensus().nSuperblockCycle * Params().GetConsensus().nPowTargetSpacing;
-            int nTimeExpired = (int)(pObj->GetCreationTime() + 2 * nSuperblockCycleSeconds + GOVERNANCE_DELETION_DELAY);
+            int64_t nTimeExpired = pObj->GetCreationTime() + 2 * nSuperblockCycleSeconds + GOVERNANCE_DELETION_DELAY;
 
             if(pObj->GetObjectType() == GOVERNANCE_OBJECT_WATCHDOG) {
                 mapWatchdogObjects.erase(nHash);
             } else if(pObj->GetObjectType() != GOVERNANCE_OBJECT_TRIGGER) {
                 // keep hashes of deleted proposals forever
-                nTimeExpired = std::numeric_limits<int>::max();
+                nTimeExpired = std::numeric_limits<int64_t>::max();
             }
 
             mapErasedGovernanceObjects.insert(std::make_pair(nHash, nTimeExpired));
@@ -544,9 +544,9 @@ void CGovernanceManager::UpdateCachesAndClean()
     }
 
     // forget about expired deleted objects
-    hash_time32_m_it s_it = mapErasedGovernanceObjects.begin();
+    hash_time_m_it s_it = mapErasedGovernanceObjects.begin();
     while(s_it != mapErasedGovernanceObjects.end()) {
-        if(s_it->second < (int)GetTime())
+        if(s_it->second < GetTime())
             mapErasedGovernanceObjects.erase(s_it++);
         else
             ++s_it;
@@ -1378,7 +1378,7 @@ std::string CGovernanceManager::ToString() const
         ++it;
     }
 
-    return strprintf("Governance Objects: %d (Proposals: %d, Triggers: %d, Watchdogs: %d/%d, Other: %d; Deleted: %d), Votes: %d",
+    return strprintf("Governance Objects: %d (Proposals: %d, Triggers: %d, Watchdogs: %d/%d, Other: %d; Erased: %d), Votes: %d",
                     (int)mapObjects.size(),
                     nProposalCount, nTriggerCount, nWatchdogCount, mapWatchdogObjects.size(), nOtherCount, (int)mapErasedGovernanceObjects.size(),
                     (int)mapVoteToObject.GetSize());
