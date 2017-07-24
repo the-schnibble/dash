@@ -117,7 +117,7 @@ public:
     double GetRate()
     {
         int nCount = GetCount();
-        if(nCount < 2) {
+        if(nCount < RATE_BUFFER_SIZE) {
             return 0.0;
         }
         int64_t nMin = GetMinTimestamp();

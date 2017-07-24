@@ -557,8 +557,9 @@ void CGovernanceManager::UpdateCachesAndClean()
 
     // forget about expired deleted objects
     hash_time_m_it s_it = mapErasedGovernanceObjects.begin();
+    nNow = GetTime();
     while(s_it != mapErasedGovernanceObjects.end()) {
-        if(s_it->second < GetTime())
+        if(s_it->second < nNow)
             mapErasedGovernanceObjects.erase(s_it++);
         else
             ++s_it;
