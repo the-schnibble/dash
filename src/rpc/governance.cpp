@@ -241,8 +241,10 @@ UniValue gobject(const UniValue& params, bool fHelp)
             if(fMnFound) {
                 govobj.SetMasternodeInfo(mn.vin);
                 govobj.Sign(activeMasternode.keyMasternode, activeMasternode.pubKeyMasternode);
-            }
-            else {
+            } else if (GetBoolArg("-govtest", false)) {
+                //d69e2aa854befedb308dbe4fbcef685d945bc91a226af65bd9df072b9862532d": "1
+                govobj.SetMasternodeInfo(CTxIn());
+            } else {
                 LogPrintf("gobject(submit) -- Object submission rejected because node is not a masternode\n");
                 throw JSONRPCError(RPC_INVALID_PARAMETER, "Only valid masternodes can submit this type of object");
             }
@@ -269,7 +271,7 @@ UniValue gobject(const UniValue& params, bool fHelp)
 
         // RELAY THIS OBJECT
         // Reject if rate check fails but don't update buffer
-        if(!governance.MasternodeRateCheck(govobj)) {
+        if(!GetBoolArg("-govtest", false) && !governance.MasternodeRateCheck(govobj)) {
             LogPrintf("gobject(submit) -- Object submission rejected because of rate check failure - hash = %s\n", strHash);
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Object creation rate limit exceeded");
         }
