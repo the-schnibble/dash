@@ -397,6 +397,7 @@ libbitcoin_util_a_SOURCES = \
   utilmoneystr.cpp \
   utilstrencodings.cpp \
   utiltime.cpp \
+  testlogger.cpp \
   $(BITCOIN_CORE_H)
 
 if GLIBC_BACK_COMPAT
