@@ -26,6 +26,8 @@ const std::map<std::string, TestFormat> mapTestMessages = {
     {"SendMessages -- GETDATA -- requesting inv = %s peer=%d\n",
      TestFormat("get_data",0)},
 
+    {"CGovernanceManager::UpdatedBlockTip pCurrentBlockIndex->nHeight: %d\n",
+     TestFormat("update_block_tip",0)},
 
     // Messages related to governance object manager
 
@@ -57,13 +59,19 @@ const std::map<std::string, TestFormat> mapTestMessages = {
      TestFormat("govobj_seen_received",0)},
 
     {"MNGOVERNANCEOBJECT -- Governance object is invalid - %s\n",
-     TestFormat("govobj_invalid_received",0)},
+     TestFormat("govobj_invalid_received")},
 
     {"MNGOVERNANCEOBJECT -- Not enough fee confirmations for: %s, strError = %s\n",
      TestFormat("govobj_missing_confs",0)},
 
     {"AddGovernanceObject -- %s new, received form %s\n",
-     TestFormat("govobj_accepted",0)}
+     TestFormat("govobj_accepted",0)},
+
+    {"CGovernanceManager::CheckPostponedObjects -- additional relay: hash = %s\n",
+     TestFormat("postponed_relay",0)},
+
+    {"CGovernanceManager::CheckPostponedObjects -- additional relay of unknown object: %s\n",
+     TestFormat("postponed_unknown_relay",0)}
 };
 
 CTestLogger& CTestLogger::GetInstance()
