@@ -258,6 +258,12 @@ void CInstantSend::Vote(CTxLockCandidate& txLockCandidate)
 bool CInstantSend::ProcessTxLockVote(CNode* pfrom, CTxLockVote& vote)
 {
     // cs_main, cs_wallet and cs_instantsend should be already locked
+    AssertLockHeld(cs_main);
+#ifdef ENABLE_WALLET
+    if (pwalletMain)
+        AssertLockHeld(pwalletMain->cs_wallet);
+#endif
+    AssertLockHeld(cs_instantsend);
 
     uint256 txHash = vote.GetTxHash();
 
@@ -439,6 +445,11 @@ void CInstantSend::TryToFinalizeLockCandidate(const CTxLockCandidate& txLockCand
 void CInstantSend::UpdateLockedTransaction(const CTxLockCandidate& txLockCandidate)
 {
     // cs_wallet and cs_instantsend should be already locked
+#ifdef ENABLE_WALLET
+    if (pwalletMain)
+        AssertLockHeld(pwalletMain->cs_wallet);
+#endif
+    AssertLockHeld(cs_instantsend);
 
     uint256 txHash = txLockCandidate.GetHash();
 
