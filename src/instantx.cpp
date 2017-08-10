@@ -57,7 +57,13 @@ void CInstantSend::ProcessMessage(CNode* pfrom, std::string& strCommand, CDataSt
         CTxLockVote vote;
         vRecv >> vote;
 
-        LOCK2(cs_main, cs_instantsend);
+        LOCK(cs_main);
+#ifdef ENABLE_WALLET
+        if (pwalletMain)
+            LOCK(pwalletMain->cs_wallet);
+#endif
+        LOCK(cs_instantsend);
+
 
         uint256 nVoteHash = vote.GetHash();
 
@@ -251,7 +257,7 @@ void CInstantSend::Vote(CTxLockCandidate& txLockCandidate)
 //received a consensus vote
 bool CInstantSend::ProcessTxLockVote(CNode* pfrom, CTxLockVote& vote)
 {
-    LOCK2(cs_main, cs_instantsend);
+    // cs_main, cs_wallet and cs_instantsend should be already locked
 
     uint256 txHash = vote.GetTxHash();
 
@@ -362,7 +368,13 @@ bool CInstantSend::ProcessTxLockVote(CNode* pfrom, CTxLockVote& vote)
 
 void CInstantSend::ProcessOrphanTxLockVotes()
 {
-    LOCK2(cs_main, cs_instantsend);
+    LOCK(cs_main);
+#ifdef ENABLE_WALLET
+    if (pwalletMain)
+        LOCK(pwalletMain->cs_wallet);
+#endif
+    LOCK(cs_instantsend);
+
     std::map<uint256, CTxLockVote>::iterator it = mapTxLockVotesOrphan.begin();
     while(it != mapTxLockVotesOrphan.end()) {
         if(ProcessTxLockVote(NULL, it->second)) {
@@ -406,7 +418,12 @@ bool CInstantSend::IsEnoughOrphanVotesForTxAndOutPoint(const uint256& txHash, co
 
 void CInstantSend::TryToFinalizeLockCandidate(const CTxLockCandidate& txLockCandidate)
 {
-    LOCK2(cs_main, cs_instantsend);
+    LOCK(cs_main);
+#ifdef ENABLE_WALLET
+    if (pwalletMain)
+        LOCK(pwalletMain->cs_wallet);
+#endif
+    LOCK(cs_instantsend);
 
     uint256 txHash = txLockCandidate.txLockRequest.GetHash();
     if(txLockCandidate.IsAllOutPointsReady() && !IsLockedInstantSendTransaction(txHash)) {
@@ -421,7 +438,7 @@ void CInstantSend::TryToFinalizeLockCandidate(const CTxLockCandidate& txLockCand
 
 void CInstantSend::UpdateLockedTransaction(const CTxLockCandidate& txLockCandidate)
 {
-    LOCK(cs_instantsend);
+    // cs_wallet and cs_instantsend should be already locked
 
     uint256 txHash = txLockCandidate.GetHash();
 
