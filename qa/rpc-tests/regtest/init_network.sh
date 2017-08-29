@@ -90,6 +90,8 @@ do
     while [ -e /proc/$pid ]; do sleep 0.1; done
 done
 
+sleep 5
+
 for (( i=1; i<=$mncount; i++ ))
 do
     if [ $i -eq 1 ]
