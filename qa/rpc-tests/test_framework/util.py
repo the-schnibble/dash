@@ -151,10 +151,11 @@ def update_ports(dirname, n):
     datadir = os.path.join(dirname, "node"+str(n))
     if not os.path.isdir(datadir):
         os.makedirs(datadir)
+
     with open(os.path.join(datadir, "dash.conf"), 'r') as f:
         s = f.read()
-    s = re.sub(r"rpcport=[0-9]+", "rpcport="+str(rpc_port(n)), s)
-    s = re.sub(r"port=[0-9]+", "port="+str(p2p_port(n)), s)
+    s = re.sub(r"\nport=[0-9]+", "\nport="+str(p2p_port(n)), s)
+    s = re.sub(r"\nrpcport=[0-9]+", "\nrpcport="+str(rpc_port(n)), s)
     with open(os.path.join(datadir, "dash.conf"), 'w') as f:
         f.write(s)
 
@@ -173,16 +174,11 @@ def initialize_datadir(dirname, n, mnkey = None):
         f.write("regtest=1\n")
         f.write("rpcuser=rt\n")
         f.write("rpcpassword=rt\n")
+        f.write("listen=1\n")
+        f.write("bind=127.0.0.1\n")
         f.write("port="+str(p2p_port(n))+"\n")
         f.write("rpcport="+str(rpc_port(n))+"\n")
         f.write("listenonion=0\n")
-        #~ if mnkey is not None:
-            #~ f.write("masternode=1\n")
-            #~ f.write("masternodeprivkey="+mnkey)
-
-    #~ if mnkey is not None:
-        #~ with open(os.path.join(datadir, "regtest/masternode.conf"), 'w') as f:
-            #~ f.write("mn"+str(n)+" 127.0.0.1"+":"+str(p2p_port(n))+" "+mnkey+" "+txid+" 1") #19994
                 
     return datadir
 
@@ -225,7 +221,6 @@ def initialize_chain_mn(test_dir):
             rebuild = True
             break
 
-    mnkey = dict()
     if rebuild:
         #find and delete old cache directories if any exist
         for i in range(ncount):
@@ -269,27 +264,26 @@ def initialize_chain_mn(test_dir):
                 sync_blocks(rpcs)
                 
                 
-        for i in range(ncount):
+        for i in range(mncount):
             addr = rpcs[i].getaccountaddress('0')
             txid = rpcs[i].sendtoaddress(addr, 1000)
+            rpcs[i].generate(1)
+            sync_blocks(rpcs)
+            mnkey = rpcs[i].masternode('genkey')
             
-            if i < mncount:
-                mnkey[i] = rpcs[i].masternode('genkey')
-                
-                datadir = os.path.join("cache_mn", "node"+str(i))
-                with open(os.path.join(datadir, "dash.conf"), 'a') as f:
-                    f.write("masternode=1\n")
-                    f.write("masternodeprivkey="+mnkey[i])
+            datadir = os.path.join("cache_mn", "node"+str(i))
+            with open(os.path.join(datadir, "dash.conf"), 'a') as f:
+                f.write("masternode=1\n")
+                f.write("masternodeprivkey="+mnkey)
 
-                with open(os.path.join(datadir, "regtest/masternode.conf"), 'w') as f:
-                    f.write("mn"+str(i)+" 127.0.0.1"+":"+str(p2p_port(i))+" "+mnkey[i]+" "+txid+" 1") #19994
-
-        rpcs[0].generate(1)
+            with open(os.path.join(datadir, "regtest/masternode.conf"), 'w') as f:
+                f.write("mn"+str(i)+" 127.0.0.1"+":"+str(p2p_port(i))+" "+mnkey+" "+txid+" 1") #19994
 
         # Shut them down, and clean up cache directories:
         stop_nodes(rpcs)
         wait_bitcoinds()
         disable_mocktime()
+        time.sleep(5)
         for i in range(ncount):
             os.remove(log_filename("cache_mn", i, "debug.log"))
             os.remove(log_filename("cache_mn", i, "db.log"))
@@ -305,7 +299,6 @@ def initialize_chain_mn(test_dir):
         from_dir = os.path.join("cache_mn", "node"+str(i))
         to_dir = os.path.join(test_dir,  "node"+str(i))
         shutil.copytree(from_dir, to_dir)
-        #initialize_datadir(test_dir, i, mnkey.get(i, None)) # Overwrite port/rpcport in dash.conf
         update_ports(test_dir, i)
 
 def initialize_chain(test_dir):
@@ -374,7 +367,7 @@ def initialize_chain(test_dir):
         from_dir = os.path.join("cache", "node"+str(i))
         to_dir = os.path.join(test_dir,  "node"+str(i))
         shutil.copytree(from_dir, to_dir)
-        initialize_datadir(test_dir, i) # Overwrite port/rpcport in dash.conf
+        update_ports(test_dir, i)
 
 def initialize_chain_clean(test_dir, num_nodes):
     """
