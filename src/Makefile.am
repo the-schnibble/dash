@@ -172,6 +172,7 @@ BITCOIN_CORE_H = \
   support/cleanse.h \
   support/pagelocker.h \
   sync.h \
+  testlogger.h \
   threadsafety.h \
   threadinterrupt.h \
   timedata.h \
@@ -391,13 +392,13 @@ libbitcoin_util_a_SOURCES = \
   rpc/protocol.cpp \
   support/cleanse.cpp \
   sync.cpp \
-  uint256.cpp \
+  testlogger.cpp \
   threadinterrupt.cpp \
+  uint256.cpp \
   util.cpp \
   utilmoneystr.cpp \
   utilstrencodings.cpp \
   utiltime.cpp \
-  testlogger.cpp \
   $(BITCOIN_CORE_H)
 
 if GLIBC_BACK_COMPAT
