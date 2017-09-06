@@ -126,7 +126,7 @@ testScripts = [
     'invalidtxrequest.py', # NOTE: needs dash_hash to pass
     'abandonconflict.py',
     'p2p-versionbits-warning.py',
-    'mn_test.py',
+    'mn_rate_check.py',
 ]
 if ENABLE_ZMQ:
     testScripts.append('zmq_test.py')

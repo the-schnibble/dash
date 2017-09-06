@@ -195,7 +195,6 @@ def wait_for_bitcoind_start(process, url, i):
             raise Exception('dashd exited with status %i during initialization' % process.returncode)
         try:
             rpc = get_rpc_proxy(url, i)
-            print (url, i)
             blocks = rpc.getblockcount()
             break # break out of loop on success
         except IOError as e:
@@ -283,7 +282,7 @@ def initialize_chain_mn(test_dir):
         stop_nodes(rpcs)
         wait_bitcoinds()
         disable_mocktime()
-        time.sleep(5)
+
         for i in range(ncount):
             os.remove(log_filename("cache_mn", i, "debug.log"))
             os.remove(log_filename("cache_mn", i, "db.log"))
