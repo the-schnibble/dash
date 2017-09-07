@@ -31,7 +31,7 @@ class LogListener(threading.Thread):
         self.name = name
         self.daemon = True
         self.start()
-    
+
     def starts_with_count(self, message):
         count = 0
         for i in self.messages.irange(minimum = message):
@@ -42,7 +42,7 @@ class LogListener(threading.Thread):
 
     def exact_count(self, message):
         return self.messages.get(message, 0)
-        
+
     def expect_count(self, message, mincount, timeout=None):
         if timeout is None:
             timeout = self.default_timeout
@@ -75,7 +75,7 @@ class LogListener(threading.Thread):
             sys.exit()
         else:
             print('{3}: message:"{0}" count:{1} (expected at least {2})'.format(message, count, mincount, self.name))
-            
+
     def expect_maximum(self, message, maxcount, timeout=None):
         count = self.expect_count(message, maxcount+1, timeout)
         if count > maxcount:
@@ -84,7 +84,7 @@ class LogListener(threading.Thread):
             sys.exit()
         else:
             print('{3}: message:"{0}" count:{1} (expected no more than {2})'.format(message, count, maxcount, self.name))
-            
+
     def run(self):
         try:
             os.mkfifo(self.name)

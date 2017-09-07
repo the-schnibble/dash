@@ -204,6 +204,7 @@ void AdvertiseLocal(CNode *pnode)
 // learn a new local address
 bool AddLocal(const CService& addr, int nScore)
 {
+    // TODO: skip IsRoutable only in regtest mode
     if (!addr.IsRoutable() && nScore < LOCAL_MANUAL)
         return false;
 

@@ -12,7 +12,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-
 template <size_t I>
 struct getarg_impl
 {

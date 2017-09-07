@@ -26,7 +26,7 @@ const std::map<std::string, TestFormat> mapTestMessages = {
     {"SendMessages -- GETDATA -- requesting inv = %s peer=%d\n",
      TestFormat("get_data",0)},
 
-    {"CGovernanceManager::UpdatedBlockTip pCurrentBlockIndex->nHeight: %d\n",
+    {"CGovernanceManager::UpdatedBlockTip -- nCachedBlockHeight: %d\n",
      TestFormat("update_block_tip",0)},
 
     // Messages related to governance object manager

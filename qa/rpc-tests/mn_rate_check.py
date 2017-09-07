@@ -185,8 +185,6 @@ class MNCheckRateTest(BitcoinTestFramework):
         assert log3.starts_with_count("govobj_seen_received") == 0
         assert log3.starts_with_count("govobj_invalid_received") == 0
 
-        print "TEST SUCCEEDED"
-
         log1.close()
         log2.close()
         log3.close()

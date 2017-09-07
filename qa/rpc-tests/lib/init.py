@@ -95,9 +95,9 @@ def main():
         print("Please ensure correct database configuration.")
         sys.exit(1)
 
-    if not has_dash_conf():
-        print("DashCore must be installed and configured, including JSONRPC access in dash.conf")
-        sys.exit(1)
+    #~ if not has_dash_conf():
+        #~ print("DashCore must be installed and configured, including JSONRPC access in dash.conf")
+        #~ sys.exit(1)
 
 
 main()
