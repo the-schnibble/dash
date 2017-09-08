@@ -85,7 +85,12 @@ public:
         std::lock_guard<std::mutex> lock(mutex);
 
         if (fdLog == -1 && !pipeName.empty())
+#ifdef WIN32
+            //TODO: untested code needs to be verified and refactored if necessary
+            fdLog = open(pipeName.c_str(), 1 | 04000);
+#else
             fdLog = open(pipeName.c_str(), O_WRONLY | O_NONBLOCK);
+#endif
 
         if (fdLog == -1)
             return;
