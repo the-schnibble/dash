@@ -11,7 +11,6 @@
 #include "hash.h"
 #include "utilstrencodings.h"
 #include "tinyformat.h"
-#include "chainparams.h"
 
 static const unsigned char pchIPv4[12] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff };
 static const unsigned char pchOnionCat[] = {0xFD,0x87,0xD8,0x7E,0xEB,0x43};
