@@ -35,13 +35,13 @@ COVERAGE_DIR = None
 #then the mempools will not sync due to IBD.
 MOCKTIME = 0
 
-def enable_mocktime():
+def enable_mocktime(n = 4):
     #For backwared compatibility of the python scripts
     #with previous versions of the cache, set MOCKTIME 
     #to regtest genesis time + (201 * 156)
     global MOCKTIME
     #MOCKTIME = 1417713337 + (201 * 156)
-    MOCKTIME = 1417713337 + ((50*14+1) * 156)
+    MOCKTIME = 1417713337 + ((50*n+1) * 156)
 
 def disable_mocktime():
     global MOCKTIME
@@ -174,8 +174,6 @@ def initialize_datadir(dirname, n, mnkey = None):
         f.write("regtest=1\n")
         f.write("rpcuser=rt\n")
         f.write("rpcpassword=rt\n")
-        f.write("listen=1\n")
-        f.write("bind=127.0.0.1\n")
         f.write("port="+str(p2p_port(n))+"\n")
         f.write("rpcport="+str(rpc_port(n))+"\n")
         f.write("listenonion=0\n")
@@ -208,10 +206,10 @@ def wait_for_bitcoind_start(process, url, i):
 def initialize_chain_mn(test_dir):
     """
     Create (or copy from cache) a block chain with
-    4 regular nodes and 10 masternodes.
+    3 regular nodes and 3 masternodes.
     """
-    mncount = 10
-    rncount = 4
+    mncount = 3
+    rncount = 3
     ncount = mncount + rncount
 
     rebuild = False
@@ -251,7 +249,7 @@ def initialize_chain_mn(test_dir):
         # gets 25 mature blocks and 25 immature.
         # blocks are created with timestamps 156 seconds apart
         # starting from the past to the present time
-        enable_mocktime()
+        enable_mocktime(ncount)
         block_time = get_mocktime() - ((50*ncount+1) * 156)
         for i in range(2):
             for peer in range(ncount):

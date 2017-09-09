@@ -204,8 +204,8 @@ void AdvertiseLocal(CNode *pnode)
 // learn a new local address
 bool AddLocal(const CService& addr, int nScore)
 {
-    // TODO: skip IsRoutable only in regression test mode for explicitly specified addresses
-    if (!addr.IsRoutable() && (Params().RequireRoutableExternalIP() || nScore < LOCAL_MANUAL))
+    // skip IsRoutable only in regression test mode
+    if (!addr.IsRoutable() && (Params().RequireRoutableExternalIP()))
         return false;
 
     if (!fDiscover && nScore < LOCAL_MANUAL)

@@ -34,16 +34,16 @@ class MNCheckRateTest(BitcoinTestFramework):
         #start masternode with -govtest parameter
         self.nodes.append(start_node(0, self.options.tmpdir, ["-externalip=127.0.0.1","-debug","-govtest","-testlog=/tmp/node0"]))
         #start regular nodes with test log enabled
-        self.nodes.append(start_node(12, self.options.tmpdir, ["-externalip=127.0.0.1","-debug","-testlog=/tmp/node12"]))
-        self.nodes.append(start_node(13, self.options.tmpdir, ["-externalip=127.0.0.1","-debug","-testlog=/tmp/node13"]))
+        self.nodes.append(start_node(4, self.options.tmpdir, ["-externalip=127.0.0.1","-debug","-testlog=/tmp/node4"]))
+        self.nodes.append(start_node(5, self.options.tmpdir, ["-externalip=127.0.0.1","-debug","-testlog=/tmp/node5"]))
         
         #start other nodes
-        for i in range(1,12):
+        for i in range(1,4):
             self.nodes.append(start_node(i, self.options.tmpdir, ["-externalip=127.0.0.1","-debug"]))
 
         #connect nodes
-        for i in range(14):
-            for j in range(i+1,14):
+        for i in range(6):
+            for j in range(i+1,6):
                 connect_nodes(self.nodes[i], j)
 
         get_rpc_proxy(rpc_url(0), 0).generate(1)
@@ -56,16 +56,16 @@ class MNCheckRateTest(BitcoinTestFramework):
         #node1 should be a masternode started with "-govtest" parameter
         node1 = DashDaemon(host = '127.0.0.1', user='rt', password = 'rt', port = rpc_port(0))
         #node2 and node3 are regular nodes
-        node2 = DashDaemon(host = '127.0.0.1', user='rt', password = 'rt', port = rpc_port(12))
-        node3 = DashDaemon(host = '127.0.0.1', user='rt', password = 'rt', port = rpc_port(13))
+        node2 = DashDaemon(host = '127.0.0.1', user='rt', password = 'rt', port = rpc_port(4))
+        node3 = DashDaemon(host = '127.0.0.1', user='rt', password = 'rt', port = rpc_port(5))
         
         #~ node1 = get_rpc_proxy(rpc_url(0), 0)
         #~ node2 = get_rpc_proxy(rpc_url(12), 12)
         #~ node3 = get_rpc_proxy(rpc_url(13), 13)
 
         log1 = testtools.LogListener('/tmp/node0', 10)
-        log2 = testtools.LogListener('/tmp/node12', 10)
-        log3 = testtools.LogListener('/tmp/node13', 10)
+        log2 = testtools.LogListener('/tmp/node4', 10)
+        log3 = testtools.LogListener('/tmp/node5', 10)
 
         nSuperblockCycleSeconds = node1.superblockcycle() * nPowTargetSpacing
 
