@@ -52,7 +52,7 @@ class ProposalPropagationTest(BitcoinTestFramework):
         if r.get('confirmations') is None:
             return 0
         return int(r.get('confirmations'))
-            
+
     def wait_confirmations(self, dashd, loglistener, txid, count):
         while True:
             confirmations = self.get_confirmations(dashd, txid)
@@ -116,7 +116,8 @@ class ProposalPropagationTest(BitcoinTestFramework):
         print '\ntry to submit proposal with 0 confirmations'
         # should be permanently rejected by all nodes
 
-        tx_hash0 = node1.rpc_command(*proposal.get_prepare_command())
+        cmd = ['gobject', 'prepare', '0', '1', str(curunixtime), proposal.dashd_serialise()]
+        tx_hash0 = node1.rpc_command(*cmd)
         print 'collateral tx hash: {0}\n'.format(tx_hash0)
         log1.expect_minimum('push_inventory:tx {0}'.format(tx_hash0), 1)
         cmd = ['gobject', 'submit', '0', '1', str(curunixtime), proposal.dashd_serialise(), tx_hash0]
