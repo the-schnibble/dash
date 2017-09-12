@@ -38,9 +38,9 @@ MOCKTIME = 0
 def enable_mocktime(n = 4):
     #For backwared compatibility of the python scripts
     #with previous versions of the cache, set MOCKTIME 
-    #to regtest genesis time + (201 * 156)
+    #to regtest genesis time + ((50*n+1) * 156),
+    #where n is total number of preinitialized nodes
     global MOCKTIME
-    #MOCKTIME = 1417713337 + (201 * 156)
     MOCKTIME = 1417713337 + ((50*n+1) * 156)
 
 def disable_mocktime():
@@ -92,7 +92,7 @@ def wait_to_sync(node):
         time.sleep(0.5)
 
 def p2p_port(n):
-    return 11000 + n + os.getpid()%999
+    return 13000 + n + os.getpid()%999
 def rpc_port(n):
     return 12000 + n + os.getpid()%999
 
@@ -162,11 +162,11 @@ def update_ports(dirname, n):
     with open(os.path.join(datadir, "regtest/masternode.conf"), 'r') as f:
         s = f.read()
     with open(os.path.join(datadir, "regtest/masternode.conf"), 'w') as f:
-        f.write(re.sub(r"127.0.0.1:[0-9]+", "127.0.0.1:"+str(p2p_port(n)), s))   #19994
+        f.write(re.sub(r"127.0.0.1:[0-9]+", "127.0.0.1:"+str(p2p_port(n)), s))
         
     return datadir
 
-def initialize_datadir(dirname, n, mnkey = None):
+def initialize_datadir(dirname, n):
     datadir = os.path.join(dirname, "node"+str(n))
     if not os.path.isdir(datadir):
         os.makedirs(datadir)

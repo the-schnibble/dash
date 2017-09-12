@@ -9,6 +9,8 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import *
 import time
 
+#TODO make the dash-specific code as valid python library in order to use it in sentinel as well as rpc-tests
+
 import testtools
 from models import Superblock
 from dashd import DashDaemon
