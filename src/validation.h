@@ -73,11 +73,11 @@ static const unsigned int DEFAULT_DESCENDANT_SIZE_LIMIT = 101;
 /** Default for -mempoolexpiry, expiration time for mempool transactions in hours */
 static const unsigned int DEFAULT_MEMPOOL_EXPIRY = 72;
 /** The maximum size of a blk?????.dat file (since 0.8) */
-static const unsigned int MAX_BLOCKFILE_SIZE = 0x10000000; // 256 MiB
+static const unsigned int MAX_BLOCKFILE_SIZE = 0x8000000; // 128 MiB
 /** The pre-allocation chunk size for blk?????.dat files (since 0.8) */
-static const unsigned int BLOCKFILE_CHUNK_SIZE = 0x2000000; // 32 MiB
+static const unsigned int BLOCKFILE_CHUNK_SIZE = 0x1000000; // 16 MiB
 /** The pre-allocation chunk size for rev?????.dat files (since 0.8) */
-static const unsigned int UNDOFILE_CHUNK_SIZE = 0x200000; // 2 MiB
+static const unsigned int UNDOFILE_CHUNK_SIZE = 0x100000; // 1 MiB
 
 /** Maximum number of script-checking threads allowed */
 static const int MAX_SCRIPTCHECK_THREADS = 16;
@@ -186,15 +186,15 @@ static const unsigned int MIN_BLOCKS_TO_KEEP = 288;
 static const signed int DEFAULT_CHECKBLOCKS = MIN_BLOCKS_TO_KEEP;
 static const unsigned int DEFAULT_CHECKLEVEL = 3;
 
-// Require that user allocate at least 550MB for block & undo files (blk???.dat and rev???.dat)
-// At 1MB per block, 288 blocks = 576MB.
+// Require that user allocate at least 945MB for block & undo files (blk???.dat and rev???.dat)
+// At 2MB per block, 288 blocks = 576MB.
 // Add 15% for Undo data = 662MB
 // Add 20% for Orphan block rate = 794MB
 // We want the low water mark after pruning to be at least 794 MB and since we prune in
 // full block file chunks, we need the high water mark which triggers the prune to be
-// one 256MB block file + added 15% undo data = 294MB greater for a total of 1088MB
-// Setting the target to > than 1100MB will make it likely we can respect the target.
-static const uint64_t MIN_DISK_SPACE_FOR_BLOCK_FILES = 1100 * 1024 * 1024;
+// one 128MB block file + added 15% undo data = 147MB greater for a total of 941MB
+// Setting the target to > than 945MB will make it likely we can respect the target.
+static const uint64_t MIN_DISK_SPACE_FOR_BLOCK_FILES = 945 * 1024 * 1024;
 
 /** 
  * Process an incoming block. This only returns after the best known valid
