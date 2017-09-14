@@ -4369,7 +4369,7 @@ std::string GetWarnings(const std::string& strFor)
 
 ThresholdState VersionBitsTipState(const Consensus::Params& params, Consensus::DeploymentPos pos)
 {
-    AssertLockHeld(cs_main);
+    LOCK(cs_main);
     return VersionBitsState(chainActive.Tip(), params, pos, versionbitscache);
 }
 
