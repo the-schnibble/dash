@@ -2528,7 +2528,7 @@ UniValue listunspent(const UniValue& params, bool fHelp)
 
     if (fHelp || params.size() > 3)
         throw runtime_error(
-            "listunspent ( minconf maxconf addlockconf [\"address\",...] )\n"
+            "listunspent ( minconf maxconf [\"address\",...] )\n"
             "\nReturns array of unspent transaction outputs\n"
             "with between minconf and maxconf (inclusive) confirmations.\n"
             "Optionally filter to only include txouts paid to specified addresses.\n"
