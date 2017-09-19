@@ -678,7 +678,7 @@ UniValue getreceivedbyaddress(const UniValue& params, bool fHelp)
     int nMinDepth = 1;
     if (params.size() > 1)
         nMinDepth = params[1].get_int();
-    bool addLockConf = (params.size() > 2 && params[2].get_bool());
+    bool fAddLockConf = (params.size() > 2 && params[2].get_bool());
 
     // Tally
     CAmount nAmount = 0;
@@ -690,7 +690,7 @@ UniValue getreceivedbyaddress(const UniValue& params, bool fHelp)
 
         BOOST_FOREACH(const CTxOut& txout, wtx.vout)
             if (txout.scriptPubKey == scriptPubKey)
-                if (wtx.GetDepthInMainChain(addLockConf) >= nMinDepth)
+                if (wtx.GetDepthInMainChain(fAddLockConf) >= nMinDepth)
                     nAmount += txout.nValue;
     }
 
@@ -730,7 +730,7 @@ UniValue getreceivedbyaccount(const UniValue& params, bool fHelp)
     int nMinDepth = 1;
     if (params.size() > 1)
         nMinDepth = params[1].get_int();
-    bool addLockConf = (params.size() > 2 && params[2].get_bool());
+    bool fAddLockConf = (params.size() > 2 && params[2].get_bool());
 
     // Get the set of pub keys assigned to account
     string strAccount = AccountFromValue(params[0]);
@@ -748,7 +748,7 @@ UniValue getreceivedbyaccount(const UniValue& params, bool fHelp)
         {
             CTxDestination address;
             if (ExtractDestination(txout.scriptPubKey, address) && IsMine(*pwalletMain, address) && setAddress.count(address))
-                if (wtx.GetDepthInMainChain(addLockConf) >= nMinDepth)
+                if (wtx.GetDepthInMainChain(fAddLockConf) >= nMinDepth)
                     nAmount += txout.nValue;
         }
     }
@@ -757,7 +757,7 @@ UniValue getreceivedbyaccount(const UniValue& params, bool fHelp)
 }
 
 
-CAmount GetAccountBalance(CWalletDB& walletdb, const string& strAccount, int nMinDepth, const isminefilter& filter, bool addLockConf)
+CAmount GetAccountBalance(CWalletDB& walletdb, const string& strAccount, int nMinDepth, const isminefilter& filter, bool fAddLockConf)
 {
     CAmount nBalance = 0;
 
@@ -765,13 +765,13 @@ CAmount GetAccountBalance(CWalletDB& walletdb, const string& strAccount, int nMi
     for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
     {
         const CWalletTx& wtx = (*it).second;
-        if (!CheckFinalTx(wtx) || wtx.GetBlocksToMaturity() > 0 || wtx.GetDepthInMainChain(addLockConf) < 0)
+        if (!CheckFinalTx(wtx) || wtx.GetBlocksToMaturity() > 0 || wtx.GetDepthInMainChain(fAddLockConf) < 0)
             continue;
 
         CAmount nReceived, nSent, nFee;
         wtx.GetAccountAmounts(strAccount, nReceived, nSent, nFee, filter);
 
-        if (nReceived != 0 && wtx.GetDepthInMainChain(addLockConf) >= nMinDepth)
+        if (nReceived != 0 && wtx.GetDepthInMainChain(fAddLockConf) >= nMinDepth)
             nBalance += nReceived;
         nBalance -= nSent + nFee;
     }
@@ -782,10 +782,10 @@ CAmount GetAccountBalance(CWalletDB& walletdb, const string& strAccount, int nMi
     return nBalance;
 }
 
-CAmount GetAccountBalance(const string& strAccount, int nMinDepth, const isminefilter& filter, bool addLockConf)
+CAmount GetAccountBalance(const string& strAccount, int nMinDepth, const isminefilter& filter, bool fAddLockConf)
 {
     CWalletDB walletdb(pwalletMain->strWalletFile);
-    return GetAccountBalance(walletdb, strAccount, nMinDepth, filter, addLockConf);
+    return GetAccountBalance(walletdb, strAccount, nMinDepth, filter, fAddLockConf);
 }
 
 
@@ -825,7 +825,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
     int nMinDepth = 1;
     if (params.size() > 1)
         nMinDepth = params[1].get_int();
-    bool addLockConf = (params.size() > 2 && params[2].get_bool());
+    bool fAddLockConf = (params.size() > 2 && params[2].get_bool());
     isminefilter filter = ISMINE_SPENDABLE;
     if(params.size() > 3)
         if(params[3].get_bool())
@@ -847,7 +847,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
             list<COutputEntry> listReceived;
             list<COutputEntry> listSent;
             wtx.GetAmounts(listReceived, listSent, allFee, strSentAccount, filter);
-            if (wtx.GetDepthInMainChain(addLockConf) >= nMinDepth)
+            if (wtx.GetDepthInMainChain(fAddLockConf) >= nMinDepth)
             {
                 BOOST_FOREACH(const COutputEntry& r, listReceived)
                     nBalance += r.amount;
@@ -861,7 +861,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
 
     string strAccount = AccountFromValue(params[0]);
 
-    CAmount nBalance = GetAccountBalance(strAccount, nMinDepth, filter, addLockConf);
+    CAmount nBalance = GetAccountBalance(strAccount, nMinDepth, filter, fAddLockConf);
 
     return ValueFromAmount(nBalance);
 }
@@ -999,7 +999,7 @@ UniValue sendfrom(const UniValue& params, bool fHelp)
     int nMinDepth = 1;
     if (params.size() > 3)
         nMinDepth = params[3].get_int();
-    bool addLockConf = (params.size() > 4 && params[4].get_bool());
+    bool fAddLockConf = (params.size() > 4 && params[4].get_bool());
 
     CWalletTx wtx;
     wtx.strFromAccount = strAccount;
@@ -1011,7 +1011,7 @@ UniValue sendfrom(const UniValue& params, bool fHelp)
     EnsureWalletIsUnlocked();
 
     // Check funds
-    CAmount nBalance = GetAccountBalance(strAccount, nMinDepth, ISMINE_SPENDABLE, addLockConf);
+    CAmount nBalance = GetAccountBalance(strAccount, nMinDepth, ISMINE_SPENDABLE, fAddLockConf);
     if (nAmount > nBalance)
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Account has insufficient funds");
 
@@ -1073,7 +1073,7 @@ UniValue sendmany(const UniValue& params, bool fHelp)
     int nMinDepth = 1;
     if (params.size() > 2)
         nMinDepth = params[2].get_int();
-    bool addLockConf = (params.size() > 3 && params[3].get_bool());
+    bool fAddLockConf = (params.size() > 3 && params[3].get_bool());
 
     CWalletTx wtx;
     wtx.strFromAccount = strAccount;
@@ -1119,7 +1119,7 @@ UniValue sendmany(const UniValue& params, bool fHelp)
     EnsureWalletIsUnlocked();
 
     // Check funds
-    CAmount nBalance = GetAccountBalance(strAccount, nMinDepth, ISMINE_SPENDABLE, addLockConf);
+    CAmount nBalance = GetAccountBalance(strAccount, nMinDepth, ISMINE_SPENDABLE, fAddLockConf);
     if (totalAmount > nBalance)
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Account has insufficient funds");
 
@@ -1200,13 +1200,13 @@ UniValue addmultisigaddress(const UniValue& params, bool fHelp)
 struct tallyitem
 {
     CAmount nAmount;
-    int nBCConf;
+    int nConf;
     vector<uint256> txids;
     bool fIsWatchonly;
     tallyitem()
     {
         nAmount = 0;
-        nBCConf = std::numeric_limits<int>::max();
+        nConf = std::numeric_limits<int>::max();
         fIsWatchonly = false;
     }
 };
@@ -1217,15 +1217,16 @@ UniValue ListReceived(const UniValue& params, bool fByAccounts)
     int nMinDepth = 1;
     if (params.size() > 0)
         nMinDepth = params[0].get_int();
+    bool fAddLockConf = (params.size() > 1 && params[1].get_bool());
 
     // Whether to include empty accounts
     bool fIncludeEmpty = false;
-    if (params.size() > 1)
-        fIncludeEmpty = params[1].get_bool();
+    if (params.size() > 2)
+        fIncludeEmpty = params[2].get_bool();
 
     isminefilter filter = ISMINE_SPENDABLE;
-    if(params.size() > 2)
-        if(params[2].get_bool())
+    if(params.size() > 3)
+        if(params[3].get_bool())
             filter = filter | ISMINE_WATCH_ONLY;
 
     // Tally
@@ -1237,8 +1238,8 @@ UniValue ListReceived(const UniValue& params, bool fByAccounts)
         if (wtx.IsCoinBase() || !CheckFinalTx(wtx))
             continue;
 
-        int nBCDepth = wtx.GetDepthInMainChain(false);
-        if (nBCDepth < nMinDepth)
+        int nDepth = wtx.GetDepthInMainChain(fAddLockConf);
+        if (nDepth < nMinDepth)
             continue;
 
         BOOST_FOREACH(const CTxOut& txout, wtx.vout)
@@ -1253,7 +1254,7 @@ UniValue ListReceived(const UniValue& params, bool fByAccounts)
 
             tallyitem& item = mapTally[address];
             item.nAmount += txout.nValue;
-            item.nBCConf = min(item.nBCConf, nBCDepth);
+            item.nConf = min(item.nConf, nDepth);
             item.txids.push_back(wtx.GetHash());
             if (mine & ISMINE_WATCH_ONLY)
                 item.fIsWatchonly = true;
@@ -1272,12 +1273,12 @@ UniValue ListReceived(const UniValue& params, bool fByAccounts)
             continue;
 
         CAmount nAmount = 0;
-        int nBCConf = std::numeric_limits<int>::max();
+        int nConf = std::numeric_limits<int>::max();
         bool fIsWatchonly = false;
         if (it != mapTally.end())
         {
             nAmount = (*it).second.nAmount;
-            nBCConf = (*it).second.nBCConf;
+            nConf = (*it).second.nConf;
             fIsWatchonly = (*it).second.fIsWatchonly;
         }
 
@@ -1285,7 +1286,7 @@ UniValue ListReceived(const UniValue& params, bool fByAccounts)
         {
             tallyitem& item = mapAccountTally[strAccount];
             item.nAmount += nAmount;
-            item.nBCConf = min(item.nBCConf, nBCConf);
+            item.nConf = min(item.nConf, nConf);
             item.fIsWatchonly = fIsWatchonly;
         }
         else
@@ -1296,7 +1297,7 @@ UniValue ListReceived(const UniValue& params, bool fByAccounts)
             obj.push_back(Pair("address",       address.ToString()));
             obj.push_back(Pair("account",       strAccount));
             obj.push_back(Pair("amount",        ValueFromAmount(nAmount)));
-            obj.push_back(Pair("confirmations", (nBCConf == std::numeric_limits<int>::max() ? 0 : nBCConf)));
+            obj.push_back(Pair("confirmations", (nConf == std::numeric_limits<int>::max() ? 0 : nConf)));
             if (!fByAccounts)
                 obj.push_back(Pair("label", strAccount));
             UniValue transactions(UniValue::VARR);
@@ -1317,13 +1318,13 @@ UniValue ListReceived(const UniValue& params, bool fByAccounts)
         for (map<string, tallyitem>::iterator it = mapAccountTally.begin(); it != mapAccountTally.end(); ++it)
         {
             CAmount nAmount = (*it).second.nAmount;
-            int nBCConf = (*it).second.nBCConf;
+            int nConf = (*it).second.nConf;
             UniValue obj(UniValue::VOBJ);
             if((*it).second.fIsWatchonly)
                 obj.push_back(Pair("involvesWatchonly", true));
             obj.push_back(Pair("account",       (*it).first));
             obj.push_back(Pair("amount",        ValueFromAmount(nAmount)));
-            obj.push_back(Pair("confirmations", (nBCConf == std::numeric_limits<int>::max() ? 0 : nBCConf)));
+            obj.push_back(Pair("confirmations", (nConf == std::numeric_limits<int>::max() ? 0 : nConf)));
             ret.push_back(obj);
         }
     }
@@ -1336,14 +1337,15 @@ UniValue listreceivedbyaddress(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() > 3)
+    if (fHelp || params.size() > 4)
         throw runtime_error(
-            "listreceivedbyaddress ( minconf includeempty includeWatchonly)\n"
+            "listreceivedbyaddress ( minconf addlockconf includeempty includeWatchonly)\n"
             "\nList balances by receiving address.\n"
             "\nArguments:\n"
             "1. minconf          (numeric, optional, default=1) The minimum number of confirmations before payments are included.\n"
-            "2. includeempty     (bool, optional, default=false) Whether to include addresses that haven't received any payments.\n"
-            "3. includeWatchonly (bool, optional, default=false) Whether to include watchonly addresses (see 'importaddress').\n"
+            "2. addlockconf      (bool, optional, default=false) Whether to add " + std::to_string(nInstantSendDepth) + " confirmations to transactions locked via InstantSend.\n"
+            "3. includeempty     (bool, optional, default=false) Whether to include addresses that haven't received any payments.\n"
+            "4. includeWatchonly (bool, optional, default=false) Whether to include watchonly addresses (see 'importaddress').\n"
 
             "\nResult:\n"
             "[\n"
@@ -1352,7 +1354,9 @@ UniValue listreceivedbyaddress(const UniValue& params, bool fHelp)
             "    \"address\" : \"receivingaddress\",    (string) The receiving address\n"
             "    \"account\" : \"accountname\",         (string) DEPRECATED. The account of the receiving address. The default account is \"\".\n"
             "    \"amount\" : x.xxx,                  (numeric) The total amount in " + CURRENCY_UNIT + " received by the address\n"
-            "    \"confirmations\" : n                (numeric) The number of blockchain confirmations of the most recent transaction included\n"
+            "    \"confirmations\" : n                (numeric) The number of confirmations of the most recent transaction included.\n"
+            "                                                 If 'addlockconf' is true, the minimum number of confirmations is calculated\n"
+            "                                                 including additional " + std::to_string(nInstantSendDepth) + " confirmations for transactions locked via InstantSend\n"
             "    \"label\" : \"label\"                  (string) A comment for the address/transaction, if any\n"
             "  }\n"
             "  ,...\n"
@@ -1374,14 +1378,15 @@ UniValue listreceivedbyaccount(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() > 3)
+    if (fHelp || params.size() > 4)
         throw runtime_error(
-            "listreceivedbyaccount ( minconf includeempty includeWatchonly)\n"
+            "listreceivedbyaccount ( minconf addlockconf includeempty includeWatchonly)\n"
             "\nDEPRECATED. List balances by account.\n"
             "\nArguments:\n"
             "1. minconf           (numeric, optional, default=1) The minimum number of confirmations before payments are included.\n"
-            "2. includeempty      (bool, optional, default=false) Whether to include accounts that haven't received any payments.\n"
-            "3. includeWatchonly  (bool, optional, default=false) Whether to include watchonly addresses (see 'importaddress').\n"
+            "2. addlockconf      (bool, optional, default=false) Whether to add " + std::to_string(nInstantSendDepth) + " confirmations to transactions locked via InstantSend.\n"
+            "3. includeempty      (bool, optional, default=false) Whether to include accounts that haven't received any payments.\n"
+            "4. includeWatchonly  (bool, optional, default=false) Whether to include watchonly addresses (see 'importaddress').\n"
 
             "\nResult:\n"
             "[\n"
@@ -1667,7 +1672,7 @@ UniValue listaccounts(const UniValue& params, bool fHelp)
     int nMinDepth = 1;
     if (params.size() > 0)
         nMinDepth = params[0].get_int();
-    bool addLockConf = (params.size() > 1 && params[1].get_bool());
+    bool fAddLockConf = (params.size() > 1 && params[1].get_bool());
     isminefilter includeWatchonly = ISMINE_SPENDABLE;
     if(params.size() > 2)
         if(params[2].get_bool())
@@ -1686,7 +1691,7 @@ UniValue listaccounts(const UniValue& params, bool fHelp)
         string strSentAccount;
         list<COutputEntry> listReceived;
         list<COutputEntry> listSent;
-        int nDepth = wtx.GetDepthInMainChain(addLockConf);
+        int nDepth = wtx.GetDepthInMainChain(fAddLockConf);
         if (wtx.GetBlocksToMaturity() > 0 || nDepth < 0)
             continue;
         wtx.GetAmounts(listReceived, listSent, nFee, strSentAccount, includeWatchonly);
