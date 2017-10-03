@@ -44,27 +44,37 @@ The key thing to understand is that this value indicates the number of "confirma
 There is also a field named `instantlock` (that is present in commands such as `listsinceblock`). The value in this field indicates whether a given transaction is locked via InstantSend.
 
 **Examples**
-* InstantSend transaction just occurred:
-    `listreceivedbyaddress 0 true`
-      * confirmations: 5
-    `listsinceblock`
-      * confirmations: 0
-      * instantlock: true
-* InstantSend transaction received one confirmation from blockchain:
-    `listreceivedbyaddress 0 true`
-      * confirmations: 6
-    `listsinceblock`
-      * confirmations: 1
-      * instantlock: true
-* non-InstantSend transaction just occurred:
-    `listreceivedbyaddress 0 true`
-      * confirmations: 0
-    `listsinceblock`
-      * confirmations: 0
-      * instantlock: false
-* non-InstantSend transaction received one confirmation from blockchain:
-    `listreceivedbyaddress 0 true`
-      * confirmations: 1
-    `listsinceblock`
-      * confirmations: 1
-      * instantlock: false
+
+1. `listreceivedbyaddress 0 true`
+   * InstantSend transaction just occurred:
+        * confirmations: 5
+   * InstantSend transaction received one confirmation from blockchain:
+        * confirmations: 6
+   * non-InstantSend transaction just occurred:
+        * confirmations: 0
+   * non-InstantSend transaction received one confirmation from blockchain:
+        * confirmations: 1
+
+2. `listreceivedbyaddress 0`
+   * InstantSend transaction just occurred:
+        * confirmations: 0
+   * InstantSend transaction received one confirmation from blockchain:
+        * confirmations: 1
+   * non-InstantSend transaction just occurred:
+        * confirmations: 0
+   * non-InstantSend transaction received one confirmation from blockchain:
+        * confirmations: 1
+
+3. `listsinceblock`
+    * InstantSend transaction just occurred:
+        * confirmations: 0
+        * instantlock: true
+    * InstantSend transaction received one confirmation from blockchain:
+        * confirmations: 1
+        * instantlock: true
+    * non-InstantSend transaction just occurred:
+        * confirmations: 0
+        * instantlock: false
+    * non-InstantSend transaction received one confirmation from blockchain:
+        * confirmations: 1
+        * instantlock: false
