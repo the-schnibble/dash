@@ -1610,7 +1610,7 @@ void CWalletTx::GetAmounts(list<COutputEntry>& listReceived,
 
     // Compute fee:
     CAmount nDebit = GetDebit(filter);
-    CAmount nReceived = 0;
+    CAmount nCredit = 0;
     bool fFromMe = IsFromMe(filter);
     if (fFromMe) // means we signed/sent this transaction and all inputs are from us
     {
@@ -1654,14 +1654,19 @@ void CWalletTx::GetAmounts(list<COutputEntry>& listReceived,
 
         // If we are receiving the output, add it as a "received" entry
         if (fIsMine & filter) {
-            nReceived += txout.nValue;
+            nCredit += txout.nValue;
             listReceived.push_back(output);
         }
     }
 
-    if (!fFromMe && nDebit > nReceived) {
-        COutputEntry output = {CNoDestination(), nDebit - nReceived, -1};
-        listSent.push_back(output);
+    if (!fFromMe && nDebit > 0) {
+        if (nCredit == nDebit) {
+            for(const auto& output: listReceived)
+                listSent.push_back(output);
+        } else {
+            COutputEntry output = {CNoDestination(), nDebit, -1};
+            listSent.push_back(output);
+        }
     }
 
 }
